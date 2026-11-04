@@ -1,0 +1,83 @@
+# Python Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+pip_cache/
+
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing & Hypothesis
+.pytest_cache/
+.hypothesis/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Node & Frontend
+frontend/node_modules/
+node_modules/
+frontend/dist/
+dist/
+.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Application Storage & Local Vector / File Caches
+backend/chroma_data/
+backend/file_cache/
+backend/models/
+chroma_data/
+file_cache/
+tmp/
+*.tmp
+
+# Large Model Weights (Local GGUF/bin weights)
+*.gguf
+*.bin
+*.pt
+*.safetensors
+
+# Environment & Secret configs
+.env
+.env.local
+.env.*.local
+
+# IDE & Editor artifacts
+.vscode/
+.idea/
+.kiro/
+*.swp
+*.swo
+
+# OS Generated
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Temporary Root Scratch Images
+/flux_*.png
+/beautiful_policy_explainer.png
+/clean_policy_infographic.png
