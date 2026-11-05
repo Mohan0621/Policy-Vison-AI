@@ -56,31 +56,58 @@ class APIClient {
   public onSessionExpired?: () => void;
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<APIResponse<T>> {
-    const token = typeof window !== 'undefined'
-      ? (localStorage.getItem('pv_token') || sessionStorage.getItem('pv_token'))
-      : null;
+    try {
+      const token = typeof window !== 'undefined'
+        ? (localStorage.getItem('pv_token') || sessionStorage.getItem('pv_token'))
+        : null;
 
-    const headers: Record<string, string> = {
-      ...(options.headers as Record<string, string> || {}),
-    };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const res = await fetch(`${this.baseUrl}${endpoint}`, {
-      ...options,
-      headers,
-      credentials: 'include',
-    });
-
-    if (res.status === 401) {
-      if (this.onSessionExpired) {
-        this.onSessionExpired();
+      const headers: Record<string, string> = {
+        ...(options.headers as Record<string, string> || {}),
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
       }
-    }
 
-    const data = await res.json();
-    return data as APIResponse<T>;
+      const res = await fetch(`${this.baseUrl}${endpoint}`, {
+        ...options,
+        headers,
+        credentials: 'include',
+      });
+
+      if (res.status === 401) {
+        if (this.onSessionExpired) {
+          this.onSessionExpired();
+        }
+      }
+
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        return {
+          success: false,
+          data: null,
+          error: {
+            code: 'SERVER_OFFLINE',
+            message: `Server returned status ${res.status}. Backend might be offline.`,
+            retryable: true,
+          },
+          request_id: '',
+        };
+      }
+
+      const data = await res.json();
+      return data as APIResponse<T>;
+    } catch (err: any) {
+      return {
+        success: false,
+        data: null,
+        error: {
+          code: 'CONNECTION_ERROR',
+          message: err?.message || 'Cannot reach PolicyVision backend service.',
+          retryable: true,
+        },
+        request_id: '',
+      };
+    }
   }
 
   // Auth Endpoints

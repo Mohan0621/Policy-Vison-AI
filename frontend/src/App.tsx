@@ -46,7 +46,7 @@ export const App: React.FC = () => {
           setSelectedStyle(res.data.selected_style);
         }
       }
-    });
+    }).catch(() => {});
   }, []);
 
   const handleTabChange = (tab: 'landing' | 'auth' | 'upload' | 'viewer' | 'qa' | 'export') => {
