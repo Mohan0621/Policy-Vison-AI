@@ -8,12 +8,34 @@ export default {
   theme: {
     extend: {
       fontFamily: {
+        serif: ['Newsreader', 'Georgia', 'serif'],
         syne: ['Syne', 'sans-serif'],
         mono: ['Space Mono', 'monospace'],
         grotesk: ['Space Grotesk', 'sans-serif'],
         sans: ['Plus Jakarta Sans', 'sans-serif'],
       },
       colors: {
+        clinia: {
+          primary: '#1A1A1E',
+          vital: '#FF5C00',
+          secondary: '#FF5C00',
+          remedy: '#FCF8EF',
+          'remedy-light': '#F9F7F2',
+          'remedy-medium': '#F2EEE5',
+          'remedy-dark': '#ECD9B9',
+          noble: '#CCA44F',
+          trust: '#95795C',
+          gray: {
+            50: 'rgba(0, 0, 0, 0.051)',
+            100: 'rgba(0, 0, 0, 0.102)',
+            200: '#E4DFD5',
+            300: '#D5CFC3',
+            500: 'rgba(0, 0, 0, 0.502)',
+            700: '#2F2F34',
+            800: '#202125',
+            900: '#1A1A1E',
+          }
+        },
         dark: {
           950: '#050607',
           900: '#08090A',

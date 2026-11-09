@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Trash2, Bot, User, Sparkles, Loader2, Info } from 'lucide-react';
+import { Send, Trash2, Bot, User, Loader2, Info } from 'lucide-react';
 import { apiClient, IndianLanguage, QAMessage, VisualStyle } from '../api/client';
 
 interface QAPageProps {
@@ -82,20 +82,19 @@ export const QAPage: React.FC<QAPageProps> = ({ currentLanguage, currentStyle })
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8 sm:py-12 flex flex-col h-[calc(100vh-6.5rem)]">
-      {/* Header */}
-      <div className="flex items-end justify-between pb-6 border-b border-slate-200 mb-6">
-        <div>
-          <div className="inline-flex items-center gap-2 text-xs font-bold text-orange-600 border border-orange-200 rounded-full px-3 py-1 bg-orange-50 mb-2 shadow-sm">
-            <Sparkles size={12} className="text-orange-500" />
-            <span>RAG-GROUNDED ASSISTANT</span>
+      {/* Clinia Header */}
+      <div className="flex items-end justify-between pb-6 border-b border-[#ECD9B9] mb-6">
+        <div className="space-y-1">
+          <div className="font-mono text-xs uppercase tracking-wider text-[#FF5C00] font-semibold">
+            Context Engine Assistant
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Policy Intelligence Chat<span className="text-orange-500">.</span>
-          </h2>
+          <h1 className="font-editorial text-3xl sm:text-4xl font-normal tracking-tight text-[#1A1A1E]">
+            Policy intelligence chat
+          </h1>
         </div>
         <button
           onClick={handleClearHistory}
-          className="text-xs text-slate-600 hover:text-rose-600 flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-white border border-slate-200 hover:border-rose-300 transition-all shadow-sm font-semibold"
+          className="btn-clinia-transparent text-xs py-1.5 px-3.5 font-mono uppercase tracking-wider flex items-center space-x-1.5"
         >
           <Trash2 className="w-3.5 h-3.5" />
           <span>Clear History</span>
@@ -103,8 +102,8 @@ export const QAPage: React.FC<QAPageProps> = ({ currentLanguage, currentStyle })
       </div>
 
       {/* 30-min Inactivity context notice */}
-      <div className="bg-white rounded-2xl px-4 py-2.5 mb-6 text-xs text-slate-600 flex items-center space-x-2.5 border border-slate-200 shadow-sm">
-        <Info className="w-4 h-4 text-orange-500 flex-shrink-0" />
+      <div className="card-clinia px-4 py-2.5 mb-6 text-xs text-[#53402C] flex items-center space-x-2.5 font-mono shadow-2xs">
+        <Info className="w-4 h-4 text-[#FF5C00] flex-shrink-0" />
         <span>CONTEXT WINDOW: 10 FIFO SLOTS • 30-MINUTE INACTIVITY PURGE ENFORCED</span>
       </div>
 

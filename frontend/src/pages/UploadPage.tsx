@@ -138,19 +138,22 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onSuccess }) => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-8 py-10">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-950 mb-2">
-          Upload Policy Schedule
+    <div className="max-w-5xl mx-auto px-4 sm:px-8 py-12">
+      {/* Clinia-style Header */}
+      <div className="mb-10 space-y-2">
+        <div className="font-mono text-xs uppercase tracking-wider text-[#FF5C00] font-semibold">
+          Context Engine Ingestion
+        </div>
+        <h1 className="font-editorial text-4xl sm:text-5xl font-normal tracking-tight text-[#1A1A1E]">
+          Ingest policy contract
         </h1>
-        <p className="text-sm text-slate-600 max-w-2xl leading-relaxed">
-          Ingest insurance PDF contracts or raw excerpts to generate 100% document-grounded visual infographics across What is Covered, What is Not Covered, and Cashless Claim procedures.
+        <p className="text-sm text-[#53402C] max-w-2xl leading-relaxed">
+          Upload insurance PDF contracts or raw excerpts to generate 100% document-grounded visual infographics across What is Covered, What is Not Covered, and Cashless Claim procedures.
         </p>
       </div>
 
       {errorMsg && (
-        <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-3 text-rose-700 text-xs">
+        <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3 text-rose-800 text-xs">
           <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-rose-600" />
           <div>
             <span className="font-bold">Ingestion Notice:</span> {errorMsg}
@@ -160,35 +163,35 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onSuccess }) => {
 
       {loading ? (
         /* Processing HUD */
-        <div className="bg-white rounded-2xl p-10 text-center border border-slate-200 shadow-sm space-y-4">
-          <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center mx-auto text-slate-800">
-            <Loader2 className="w-6 h-6 animate-spin text-orange-600" />
+        <div className="card-clinia p-12 text-center space-y-4">
+          <div className="w-12 h-12 rounded-full bg-[#FCF8EF] border border-[#ECD9B9] flex items-center justify-center mx-auto text-[#1A1A1E]">
+            <Loader2 className="w-6 h-6 animate-spin text-[#FF5C00]" />
           </div>
           <div>
-            <div className="text-xs font-mono font-semibold text-slate-500 uppercase tracking-wider">
+            <div className="text-xs font-mono font-semibold text-[#95795C] uppercase tracking-wider">
               PIPELINE ACTIVE • {progress}%
             </div>
-            <h2 className="text-lg font-bold text-slate-900 mt-1">
+            <h2 className="font-editorial text-2xl font-normal text-[#1A1A1E] mt-1">
               {stepLabel}
             </h2>
           </div>
-          <div className="w-full bg-slate-100 rounded-full h-2 max-w-md mx-auto overflow-hidden border border-slate-200">
+          <div className="w-full bg-[#F2EEE5] rounded-full h-2 max-w-md mx-auto overflow-hidden border border-[#ECD9B9]">
             <div
-              className="bg-orange-600 h-2 rounded-full transition-all duration-300"
+              className="bg-[#FF5C00] h-2 rounded-full transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {/* Mode Switcher Tabs */}
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl max-w-xs border border-slate-200">
+          <div className="flex items-center gap-1.5 p-1 bg-[#F2EEE5] rounded-full max-w-xs border border-[#ECD9B9]">
             <button
               onClick={() => setActiveMode('pdf')}
-              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+              className={`flex-1 py-1.5 px-4 rounded-full text-xs font-mono uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
                 activeMode === 'pdf'
-                  ? 'bg-white text-slate-950 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-950'
+                  ? 'bg-[#1A1A1E] text-white shadow-2xs font-bold'
+                  : 'text-[#53402C] hover:text-[#1A1A1E]'
               }`}
             >
               <UploadCloud className="w-3.5 h-3.5" />
@@ -196,14 +199,14 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onSuccess }) => {
             </button>
             <button
               onClick={() => setActiveMode('text')}
-              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+              className={`flex-1 py-1.5 px-4 rounded-full text-xs font-mono uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
                 activeMode === 'text'
-                  ? 'bg-white text-slate-950 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-950'
+                  ? 'bg-[#1A1A1E] text-white shadow-2xs font-bold'
+                  : 'text-[#53402C] hover:text-[#1A1A1E]'
               }`}
             >
               <FileText className="w-3.5 h-3.5" />
-              <span>Raw Text Excerpt</span>
+              <span>Raw Excerpt</span>
             </button>
           </div>
 
@@ -214,7 +217,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onSuccess }) => {
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleFileDrop}
                 onClick={() => document.getElementById('pdf-file-input')?.click()}
-                className="bg-white rounded-2xl p-8 sm:p-12 text-center cursor-pointer border-2 border-dashed border-slate-300 hover:border-slate-400 hover:bg-slate-50/50 transition-colors shadow-2xs group relative"
+                className="card-clinia p-10 sm:p-14 text-center cursor-pointer border-2 border-dashed border-[#CCA44F]/50 hover:border-[#FF5C00] hover:bg-white/80 transition-colors shadow-2xs group relative"
               >
                 <input
                   id="pdf-file-input"
@@ -223,58 +226,58 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onSuccess }) => {
                   className="hidden"
                   onChange={(e) => e.target.files && validateAndSetFile(e.target.files[0])}
                 />
-                <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center mx-auto mb-3 group-hover:text-orange-600 transition-colors">
-                  <UploadCloud className="w-6 h-6" />
+                <div className="w-14 h-14 rounded-full bg-[#FCF8EF] border border-[#ECD9B9] text-[#53402C] flex items-center justify-center mx-auto mb-4 group-hover:text-[#FF5C00] transition-colors">
+                  <UploadCloud className="w-7 h-7" />
                 </div>
-                <h2 className="font-bold text-base text-slate-900 mb-1">
+                <h2 className="font-editorial text-2xl font-normal text-[#1A1A1E] mb-1">
                   {selectedFile ? selectedFile.name : 'Select or Drop Policy Schedule (PDF)'}
                 </h2>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto mb-3">
-                  PyMuPDF extraction with table parsing • Up to 50 MB
+                <p className="text-xs text-[#53402C] max-w-sm mx-auto mb-4 font-mono">
+                  PyMuPDF extraction with tabular schedule parsing • Up to 50 MB
                 </p>
                 {selectedFile ? (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-mono font-semibold">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-mono font-semibold">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                     <span>LOADED ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)</span>
                   </div>
                 ) : (
-                  <span className="text-xs font-semibold text-orange-600 hover:underline">
+                  <span className="text-xs font-mono uppercase tracking-wider text-[#FF5C00] font-semibold hover:underline">
                     Browse from your computer
                   </span>
                 )}
               </div>
 
-              {/* Quick Sample Policies Bar */}
-              <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
+              {/* Quick Sample Policies Bar (Clinia-style) */}
+              <div className="card-clinia p-5 shadow-2xs">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
-                    <FileCheck className="w-4 h-4 text-orange-600" />
-                    <span>Quick Testing Samples (IRDAI Compliant)</span>
+                  <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#1A1A1E] font-bold">
+                    <FileCheck className="w-4 h-4 text-[#FF5C00]" />
+                    <span>Quick Testing Schedules (IRDAI Grounded)</span>
                   </div>
-                  <span className="text-[11px] text-slate-500 font-mono">
-                    1-Click load or download test policy files:
+                  <span className="text-[11px] text-[#95795C] font-mono">
+                    1-Click load or download testing policy files:
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {/* Sample 1: Care Optima */}
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 flex items-center justify-between gap-3">
+                  <div className="bg-[#FCF8EF] border border-[#ECD9B9] rounded-xl p-3.5 flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="text-xs font-bold text-slate-900 truncate">
+                      <div className="text-xs font-bold text-[#1A1A1E] truncate">
                         Care Optima Health Insurance
                       </div>
-                      <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                      <div className="text-[11px] text-[#53402C] font-mono mt-0.5">
                         Individual • ₹15L Sum Insured • 36mo PED
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0">
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           loadSamplePolicy('Care_Optima_Health_Insurance_Policy.pdf', 'Care Optima Health');
                         }}
-                        className="px-2.5 py-1 text-xs font-semibold rounded-md bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 transition-colors"
+                        className="px-3 py-1 rounded-full text-xs font-mono uppercase tracking-wider bg-white hover:bg-[#F2EEE5] text-[#1A1A1E] border border-[#ECD9B9] transition-colors"
                       >
                         Load
                       </button>
@@ -283,7 +286,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onSuccess }) => {
                         download="Care_Optima_Health_Insurance_Policy.pdf"
                         onClick={(e) => e.stopPropagation()}
                         title="Download PDF"
-                        className="p-1 text-slate-400 hover:text-slate-700 rounded transition-colors"
+                        className="p-1 text-[#95795C] hover:text-[#1A1A1E] rounded-full transition-colors"
                       >
                         <Download className="w-4 h-4" />
                       </a>
@@ -291,23 +294,23 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onSuccess }) => {
                   </div>
 
                   {/* Sample 2: Star Comprehensive */}
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 flex items-center justify-between gap-3">
+                  <div className="bg-[#FCF8EF] border border-[#ECD9B9] rounded-xl p-3.5 flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="text-xs font-bold text-slate-900 truncate">
+                      <div className="text-xs font-bold text-[#1A1A1E] truncate">
                         Star Health Comprehensive Floater
                       </div>
-                      <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                      <div className="text-[11px] text-[#53402C] font-mono mt-0.5">
                         Family Floater • ₹25L Sum Insured • Restored
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0">
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           loadSamplePolicy('Star_Comprehensive_Family_Health_Policy.pdf', 'Star Comprehensive Floater');
                         }}
-                        className="px-2.5 py-1 text-xs font-semibold rounded-md bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 transition-colors"
+                        className="px-3 py-1 rounded-full text-xs font-mono uppercase tracking-wider bg-white hover:bg-[#F2EEE5] text-[#1A1A1E] border border-[#ECD9B9] transition-colors"
                       >
                         Load
                       </button>
@@ -316,7 +319,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onSuccess }) => {
                         download="Star_Comprehensive_Family_Health_Policy.pdf"
                         onClick={(e) => e.stopPropagation()}
                         title="Download PDF"
-                        className="p-1 text-slate-400 hover:text-slate-700 rounded transition-colors"
+                        className="p-1 text-[#95795C] hover:text-[#1A1A1E] rounded-full transition-colors"
                       >
                         <Download className="w-4 h-4" />
                       </a>
@@ -327,12 +330,12 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onSuccess }) => {
             </div>
           ) : (
             /* Mode 2: Text Editor */
-            <div className="bg-white rounded-2xl p-6 space-y-3 border border-slate-200 shadow-2xs">
+            <div className="card-clinia p-6 space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                <label className="text-xs font-mono uppercase tracking-wider text-[#1A1A1E] font-bold">
                   Raw Policy Clauses
                 </label>
-                <span className="text-xs text-slate-500 font-mono">
+                <span className="text-xs text-[#95795C] font-mono">
                   {freeText.length} / 5,000 characters
                 </span>
               </div>
@@ -341,14 +344,14 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onSuccess }) => {
                 onChange={(e) => setFreeText(e.target.value)}
                 placeholder="Paste insurance policy clauses, coverage limits, inclusions, deductibles, or claim procedures..."
                 rows={7}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-slate-900 focus:bg-white resize-none transition-colors font-mono"
+                className="w-full bg-[#FCF8EF] border border-[#ECD9B9] rounded-xl p-4 text-xs sm:text-sm text-[#1A1A1E] focus:outline-none focus:border-[#FF5C00] focus:bg-white resize-none transition-colors font-mono"
               />
-              <div className="flex justify-between items-center text-xs">
-                <span className={freeText.length < 50 ? 'text-amber-600 font-medium' : 'text-slate-500'}>
+              <div className="flex justify-between items-center text-xs font-mono">
+                <span className={freeText.length < 50 ? 'text-amber-700 font-medium' : 'text-[#95795C]'}>
                   Min: 50 characters required
                 </span>
                 {freeText.length >= 50 && (
-                  <span className="text-emerald-700 font-mono font-semibold">✓ Valid Length</span>
+                  <span className="text-emerald-700 font-bold">✓ Valid Token Length</span>
                 )}
               </div>
             </div>
@@ -357,12 +360,12 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onSuccess }) => {
           {/* Configuration Grid: Languages & Visual Styles */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Language Selector */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-3">
+            <div className="card-clinia p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                <label className="text-xs font-mono uppercase tracking-wider text-[#1A1A1E] font-bold">
                   Output Language
                 </label>
-                <span className="text-xs font-mono text-slate-500">8 Indic Scripts</span>
+                <span className="text-xs font-mono text-[#95795C]">8 Indic Scripts</span>
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {LANGUAGES.map((lang) => (
@@ -370,14 +373,14 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onSuccess }) => {
                     key={lang.code}
                     type="button"
                     onClick={() => setSelectedLanguage(lang.code)}
-                    className={`p-2.5 rounded-xl border text-left transition-all ${
+                    className={`p-3 rounded-xl border text-left transition-all ${
                       selectedLanguage === lang.code
-                        ? 'border-slate-900 bg-slate-900 text-white shadow-2xs'
-                        : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-800'
+                        ? 'border-[#FF5C00] bg-[#1A1A1E] text-white shadow-2xs'
+                        : 'border-[#ECD9B9] bg-[#FCF8EF] hover:bg-white text-[#1A1A1E]'
                     }`}
                   >
                     <div className="font-bold text-xs">{lang.native}</div>
-                    <div className={`text-[10px] ${selectedLanguage === lang.code ? 'text-slate-300' : 'text-slate-500'}`}>
+                    <div className={`text-[10px] ${selectedLanguage === lang.code ? 'text-[#FFCCAF]' : 'text-[#95795C]'}`}>
                       {lang.name}
                     </div>
                   </button>
@@ -386,27 +389,27 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onSuccess }) => {
             </div>
 
             {/* Visual Style Selector */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-3">
+            <div className="card-clinia p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                <label className="text-xs font-mono uppercase tracking-wider text-[#1A1A1E] font-bold">
                   Visual Layout Engine
                 </label>
-                <span className="text-xs font-mono text-slate-500">1024×1024 Canvas</span>
+                <span className="text-xs font-mono text-[#95795C]">1024×1024 Canvas</span>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {STYLES.map((st) => (
                   <button
                     key={st.id}
                     type="button"
                     onClick={() => setSelectedStyle(st.id)}
-                    className={`w-full p-3 rounded-xl border text-left transition-all ${
+                    className={`w-full p-3.5 rounded-xl border text-left transition-all ${
                       selectedStyle === st.id
-                        ? 'border-slate-900 bg-slate-900 text-white shadow-2xs'
-                        : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-800'
+                        ? 'border-[#FF5C00] bg-[#1A1A1E] text-white shadow-2xs'
+                        : 'border-[#ECD9B9] bg-[#FCF8EF] hover:bg-white text-[#1A1A1E]'
                     }`}
                   >
                     <div className="font-bold text-xs">{st.name}</div>
-                    <div className={`text-[11px] mt-0.5 ${selectedStyle === st.id ? 'text-slate-300' : 'text-slate-500'}`}>
+                    <div className={`text-[11px] mt-0.5 ${selectedStyle === st.id ? 'text-[#FFCCAF]' : 'text-[#95795C]'}`}>
                       {st.desc}
                     </div>
                   </button>
@@ -420,7 +423,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onSuccess }) => {
             <button
               onClick={handleSubmit}
               disabled={loading || (activeMode === 'pdf' ? !selectedFile : freeText.length < 50)}
-              className="btn-accent px-6 py-3.5 text-sm font-semibold shadow-sm hover:shadow disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center gap-2"
+              className="btn-clinia-vital px-8 py-3.5 text-xs font-mono uppercase tracking-wider shadow-sm hover:shadow disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center gap-2"
             >
               <span>Orchestrate Visual Synthesis</span>
               <ArrowRight className="w-4 h-4 ml-1" />

@@ -209,22 +209,22 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   };
 
   return (
-    <div className="min-h-[calc(100vh-65px)] bg-[#FBFBFD] flex items-center justify-center p-4 sm:p-8 relative">
+    <div className="min-h-[calc(100vh-65px)] bg-[#FCF8EF] flex items-center justify-center p-4 sm:p-8 relative">
       {/* Back to Home action */}
       <button
         onClick={onBackToHome}
-        className="absolute top-6 left-6 sm:left-12 flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-2xs transition-colors"
+        className="absolute top-6 left-6 sm:left-12 flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-[#53402C] hover:text-[#1A1A1E] bg-white border border-[#ECD9B9] px-3.5 py-1.5 rounded-full shadow-2xs transition-colors"
       >
         <ArrowLeft size={14} />
         <span>Back to Overview</span>
       </button>
 
-      <div className="max-w-4xl w-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden grid md:grid-cols-12 my-6">
-        {/* Left Column: Security & Compliance Specs (De-slopped) */}
-        <div className="md:col-span-5 bg-slate-900 text-white p-8 sm:p-10 flex flex-col justify-between">
+      <div className="max-w-4xl w-full card-clinia overflow-hidden grid md:grid-cols-12 my-6">
+        {/* Left Column: Clinia-style Spec Column */}
+        <div className="md:col-span-5 bg-[#1A1A1E] text-white p-8 sm:p-10 flex flex-col justify-between">
           <div className="space-y-6">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-orange-600 text-white flex items-center justify-center font-bold text-xs tracking-wider">
+              <div className="w-8 h-8 rounded-full bg-[#FF5C00] text-white flex items-center justify-center font-bold text-xs tracking-wider">
                 PV
               </div>
               <span className="text-base font-extrabold tracking-tight">
@@ -233,11 +233,11 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             </div>
 
             <div>
-              <h2 className="text-xl font-bold tracking-tight text-white">
-                Deterministic Policy Intelligence
+              <h2 className="font-editorial text-2xl sm:text-3xl font-normal tracking-tight text-white">
+                Context Engine Studio
               </h2>
               <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                Visual synthesis and RAG querying designed for insurance professionals, legal compliance officers, and policyholders.
+                Deterministic policy intelligence engineered for policyholders, underwriters, and compliance auditors.
               </p>
             </div>
 
@@ -272,10 +272,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           </div>
         </div>
 
-        {/* Right Column: Clean Form */}
+        {/* Right Column: Clean Clinia Form */}
         <div className="md:col-span-7 p-8 sm:p-10 bg-white flex flex-col justify-center">
           {/* Switcher Tab */}
-          <div className="flex p-1 mb-6 rounded-xl bg-slate-100 border border-slate-200">
+          <div className="flex p-1 mb-6 rounded-full bg-[#F2EEE5] border border-[#ECD9B9]">
             <button
               type="button"
               onClick={() => {
@@ -283,10 +283,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 setErrorMsg(null);
                 setSuccessMsg(null);
               }}
-              className={`flex-1 py-1.5 text-xs font-semibold text-center rounded-lg transition-all ${
+              className={`flex-1 py-1.5 text-xs font-mono uppercase tracking-wider text-center rounded-full transition-all ${
                 mode === 'login'
-                  ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-[#1A1A1E] text-white shadow-2xs font-bold'
+                  : 'text-[#53402C] hover:text-[#1A1A1E]'
               }`}
             >
               Sign In
@@ -298,21 +298,21 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 setErrorMsg(null);
                 setSuccessMsg(null);
               }}
-              className={`flex-1 py-1.5 text-xs font-semibold text-center rounded-lg transition-all ${
+              className={`flex-1 py-1.5 text-xs font-mono uppercase tracking-wider text-center rounded-full transition-all ${
                 mode === 'register'
-                  ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-[#1A1A1E] text-white shadow-2xs font-bold'
+                  : 'text-[#53402C] hover:text-[#1A1A1E]'
               }`}
             >
               Register
             </button>
           </div>
 
-          <div className="mb-5">
-            <h3 className="text-xl font-bold text-slate-900">
-              {mode === 'login' ? 'Sign In to PolicyVision' : 'Create an Account'}
+          <div className="mb-5 space-y-1">
+            <h3 className="font-editorial text-3xl font-normal text-[#1A1A1E]">
+              {mode === 'login' ? 'Sign in to PolicyVision' : 'Create an account'}
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-[#53402C]">
               {mode === 'login'
                 ? 'Enter your credentials to access the document studio.'
                 : 'Register to analyze policies, verify clauses, and export infographics.'}
@@ -431,7 +431,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             <button
               type="submit"
               disabled={loading}
-              className="w-full btn-primary text-xs py-2.5 mt-2 flex items-center justify-center gap-2"
+              className="w-full btn-clinia-vital text-xs py-3 mt-3 flex items-center justify-center gap-2 font-mono uppercase tracking-wider"
             >
               {loading ? (
                 <>

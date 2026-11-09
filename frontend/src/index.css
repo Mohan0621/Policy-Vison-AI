@@ -4,20 +4,20 @@
 
 @layer base {
   :root {
-    --canvas: #f8fafc;
-    --surface: #ffffff;
-    --border: #e2e8f0;
-    --border-strong: #cbd5e1;
-    --text-primary: #0f172a;
-    --text-secondary: #475569;
-    --text-muted: #94a3b8;
-    --accent: #ea580c;
-    --accent-hover: #c2410c;
+    --color-primary: #1a1a1e;
+    --color-vital: #ff5c00;
+    --color-remedy: #fcf8ef;
+    --color-remedy-light: #f9f7f2;
+    --color-remedy-medium: #f2eee5;
+    --color-remedy-dark: #ecd9b9;
+    --color-body: #2f2f34;
+    --color-muted: #74747a;
+    --border-hairline: rgba(0, 0, 0, 0.08);
   }
 
   body {
-    background-color: var(--canvas);
-    color: var(--text-primary);
+    background-color: var(--color-remedy);
+    color: var(--color-primary);
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -25,13 +25,18 @@
     text-rendering: optimizeLegibility;
   }
 
-  /* Browser surface styling */
+  h1, h2, h3, .font-editorial {
+    font-family: 'Newsreader', 'Georgia', serif;
+    font-feature-settings: 'liga', 'clig', 'dlig';
+  }
+
+  /* Clinia-style custom text selection */
   ::selection {
-    background-color: #0f172a;
+    background-color: #ff5c00;
     color: #ffffff;
   }
 
-  /* Surgical, disciplined scrollbar */
+  /* Disciplined scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -40,110 +45,95 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 4px;
+    background: #d5cfc3;
+    border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
+    background: #95795c;
   }
 }
 
-/* Surface & Card primitives (De-slopped: crisp borders, real physics depth) */
-.craft-card {
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.03);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.craft-card:hover {
-  border-color: #cbd5e1;
-  box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.05), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
-}
-
-.craft-card-interactive {
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.craft-card-interactive:hover {
-  border-color: #ea580c;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px -4px rgba(15, 23, 42, 0.08);
-}
-
-/* Primary Action Button (Solid, authoritative, high-contrast) */
-.btn-primary {
+/* Clinia Specific Buttons & Cards */
+.btn-clinia-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background-color: #0f172a;
+  background-color: #1a1a1e;
   color: #ffffff;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 0.875rem;
   line-height: 1.25rem;
-  border-radius: 0.75rem;
-  padding: 0.625rem 1.25rem;
-  border: 1px solid #0f172a;
-  transition: background-color 0.15s ease, transform 0.1s ease;
+  border-radius: 9999px;
+  padding: 0.625rem 1.375rem;
+  border: 1px solid #1a1a1e;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
 }
 
-.btn-primary:hover {
-  background-color: #1e293b;
-  border-color: #1e293b;
-}
-
-.btn-primary:active {
-  transform: scale(0.98);
-}
-
-/* Accent Action Button (Warm Persimmon / Orange) */
-.btn-accent {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #ea580c;
+.btn-clinia-primary:hover {
+  background-color: #ff5c00;
+  border-color: #ff5c00;
   color: #ffffff;
-  font-weight: 600;
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-  border-radius: 0.75rem;
-  padding: 0.625rem 1.25rem;
-  border: 1px solid #ea580c;
-  box-shadow: 0 1px 2px 0 rgba(234, 88, 12, 0.2);
-  transition: background-color 0.15s ease, transform 0.1s ease;
 }
 
-.btn-accent:hover {
-  background-color: #c2410c;
-  border-color: #c2410c;
-}
-
-.btn-accent:active {
-  transform: scale(0.98);
-}
-
-/* Secondary Button (Neutral Paper) */
-.btn-secondary {
+.btn-clinia-vital {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background-color: #ffffff;
-  color: #334155;
-  font-weight: 600;
+  background-color: #ff5c00;
+  color: #ffffff;
+  font-weight: 500;
   font-size: 0.875rem;
   line-height: 1.25rem;
-  border-radius: 0.75rem;
-  padding: 0.625rem 1.25rem;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.03);
-  transition: all 0.15s ease;
+  border-radius: 9999px;
+  padding: 0.625rem 1.375rem;
+  border: 1px solid #ff5c00;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
 }
 
-.btn-secondary:hover {
-  background-color: #f8fafc;
-  border-color: #cbd5e1;
-  color: #0f172a;
+.btn-clinia-vital:hover {
+  background-color: #e04f00;
+  border-color: #e04f00;
+}
+
+.btn-clinia-transparent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  color: #1a1a1e;
+  font-weight: 500;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  border-radius: 9999px;
+  padding: 0.625rem 1.25rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.btn-clinia-transparent:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.25);
+  color: #1a1a1e;
+}
+
+/* Clinia Warm Card Surfaces */
+.card-clinia {
+  background-color: #ffffff;
+  border: 1px solid #ecd9b9;
+  border-radius: 1.25rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-clinia:hover {
+  border-color: #cca44f;
+}
+
+.card-clinia-remedy {
+  background-color: #f2eee5;
+  border: 1px solid #ecd9b9;
+  border-radius: 1.25rem;
 }

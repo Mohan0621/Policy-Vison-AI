@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, ArrowRight, RefreshCw, CheckCircle2, Layers, Download, Sparkles } from 'lucide-react';
+import { AlertTriangle, ArrowRight, RefreshCw, CheckCircle2, Layers, Download } from 'lucide-react';
 import { apiClient, SimplifiedExplanation, SourceCitation, VisualStyle } from '../api/client';
 
 interface ViewerPageProps {
@@ -137,24 +137,23 @@ export const ViewerPage: React.FC<ViewerPageProps> = ({
     : '/clean_policy_infographic.png';
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 sm:py-12 space-y-8">
-      {/* Studio Header Bar */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-200 pb-6">
-        <div>
-          <div className="inline-flex items-center gap-2 text-xs font-bold text-orange-600 border border-orange-200 rounded-full px-3.5 py-1.5 bg-orange-50 mb-3 shadow-sm">
-            <Sparkles size={13} className="text-orange-500" />
-            <span>VISUAL EXPLORATION CANVAS</span>
+    <div className="max-w-7xl mx-auto px-4 sm:px-8 py-10 space-y-8">
+      {/* Clinia Studio Header Bar */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-[#ECD9B9] pb-6">
+        <div className="space-y-2">
+          <div className="font-mono text-xs uppercase tracking-wider text-[#FF5C00] font-semibold">
+            Context Engine Visual Canvas
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            Policy Visual Explainer
+          <h1 className="font-editorial text-4xl sm:text-5xl font-normal tracking-tight text-[#1A1A1E]">
+            Policy visual explainer
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Crystal-clear visual synthesis with sentence-level document grounding & zero hallucinations.
+          <p className="text-sm text-[#53402C]">
+            Grounded visual synthesis with sentence-level document citations &amp; zero diffusion slop.
           </p>
         </div>
 
         {/* Style Switcher Pills */}
-        <div className="flex items-center space-x-2 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="flex items-center space-x-1 bg-[#F2EEE5] p-1 rounded-full border border-[#ECD9B9]">
           {(
             [
               { id: 'professional_infographic', label: 'Infographic' },
@@ -166,10 +165,10 @@ export const ViewerPage: React.FC<ViewerPageProps> = ({
               key={s.id}
               onClick={() => handleFullStyleChange(s.id)}
               disabled={isRegenerating}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`px-4 py-1.5 rounded-full text-xs font-mono uppercase tracking-wider transition-all ${
                 selectedStyle === s.id
-                  ? 'bg-slate-900 text-white shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  ? 'bg-[#1A1A1E] text-white shadow-2xs font-bold'
+                  : 'text-[#53402C] hover:text-[#1A1A1E]'
               }`}
             >
               {s.label}
@@ -209,43 +208,43 @@ export const ViewerPage: React.FC<ViewerPageProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left 8 Cols: Gallery Canvas Viewport */}
         <div className="lg:col-span-8 space-y-4">
-          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm relative overflow-hidden">
+          <div className="card-clinia p-6 relative overflow-hidden">
             {/* Viewport Header */}
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-1.5 bg-[#F2EEE5] p-1 rounded-full border border-[#ECD9B9]">
                 <button
                   onClick={() => setActiveVisualTab('coverage')}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  className={`px-4 py-1.5 rounded-full text-xs font-mono uppercase tracking-wider transition-all ${
                     activeVisualTab === 'coverage'
-                      ? 'bg-slate-900 text-white shadow-2xs font-bold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200'
+                      ? 'bg-[#1A1A1E] text-white shadow-2xs font-bold'
+                      : 'text-[#53402C] hover:text-[#1A1A1E]'
                   }`}
                 >
-                  COVERAGE INFOGRAPHIC
+                  Coverage Infographic
                 </button>
                 <button
                   onClick={() => setActiveVisualTab('claims')}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  className={`px-4 py-1.5 rounded-full text-xs font-mono uppercase tracking-wider transition-all ${
                     activeVisualTab === 'claims'
-                      ? 'bg-slate-900 text-white shadow-2xs font-bold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200'
+                      ? 'bg-[#1A1A1E] text-white shadow-2xs font-bold'
+                      : 'text-[#53402C] hover:text-[#1A1A1E]'
                   }`}
                 >
-                  CLAIMS FLOWCHART
+                  Claims Flowchart
                 </button>
               </div>
 
               <div className="flex items-center space-x-3">
-                <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 px-3 py-1 rounded-full">
-                  1024 × 1024 PX • 150 DPI
+                <span className="text-[11px] font-mono text-[#53402C] bg-[#FCF8EF] border border-[#ECD9B9] px-3 py-1 rounded-full">
+                  1024 × 1024 • 150 DPI
                 </span>
                 <a
                   href={currentImageUrl}
                   download="PolicyVision_Infographic.png"
-                  className="text-xs text-orange-600 hover:text-orange-700 font-bold flex items-center space-x-1.5 transition-colors"
+                  className="btn-clinia-transparent text-xs py-1 px-3 font-mono uppercase tracking-wider flex items-center space-x-1.5"
                 >
-                  <Download className="w-4 h-4" />
-                  <span className="hidden sm:inline">EXPORT</span>
+                  <Download className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Export</span>
                 </a>
               </div>
             </div>

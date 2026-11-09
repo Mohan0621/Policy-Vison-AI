@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, FileArchive, CheckCircle2, AlertTriangle, RefreshCw, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { Download, FileArchive, CheckCircle2, AlertTriangle, RefreshCw, Image as ImageIcon } from 'lucide-react';
 import { apiClient } from '../api/client';
 
 export const ExportPage: React.FC = () => {
@@ -61,18 +61,17 @@ export const ExportPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8 sm:py-12 space-y-8">
-      {/* Header */}
-      <div className="border-b border-slate-200 pb-6">
-        <div className="inline-flex items-center gap-2 text-xs font-bold text-orange-600 border border-orange-200 rounded-full px-3 py-1 bg-orange-50 mb-3 shadow-sm">
-          <Sparkles size={12} className="text-orange-500" />
-          <span>ASSET PACKAGING & EXPORT SUITE</span>
+    <div className="max-w-5xl mx-auto px-4 sm:px-8 py-10 space-y-8">
+      {/* Clinia Header */}
+      <div className="border-b border-[#ECD9B9] pb-6 space-y-1">
+        <div className="font-mono text-xs uppercase tracking-wider text-[#FF5C00] font-semibold">
+          Context Engine Export Suite
         </div>
-        <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-          Artifact Delivery Suite<span className="text-orange-500">.</span>
-        </h2>
-        <p className="text-sm text-slate-500 mt-1">
-          1024×1024 Print-Ready PNGs (150 DPI) with embedded XMP metadata & structured summary archives.
+        <h1 className="font-editorial text-4xl sm:text-5xl font-normal tracking-tight text-[#1A1A1E]">
+          Artifact delivery suite
+        </h1>
+        <p className="text-sm text-[#53402C] mt-1">
+          1024×1024 Print-Ready PNGs (150 DPI) with embedded XMP compliance metadata &amp; structured summary archives.
         </p>
       </div>
 
@@ -101,21 +100,21 @@ export const ExportPage: React.FC = () => {
         </div>
       )}
 
-      {/* Primary Bundle ZIP Action Card */}
-      <div className="rounded-3xl p-8 border border-orange-200 bg-gradient-to-br from-orange-50/60 via-white to-pink-50/60 shadow-sm relative overflow-hidden group">
+      {/* Primary Bundle ZIP Action Card (Clinia style) */}
+      <div className="card-clinia p-8 relative overflow-hidden group">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="flex items-start space-x-5">
-            <div className="w-14 h-14 rounded-2xl bg-orange-100/80 border border-orange-200 text-orange-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+            <div className="w-14 h-14 rounded-full bg-[#FCF8EF] border border-[#ECD9B9] text-[#FF5C00] flex items-center justify-center flex-shrink-0 shadow-2xs">
               <FileArchive className="w-7 h-7" />
             </div>
             <div>
-              <div className="text-xs font-bold text-orange-600 uppercase tracking-wider mb-1">
+              <div className="font-mono text-xs uppercase tracking-wider text-[#FF5C00] font-semibold mb-1">
                 Complete Bundle Archive
               </div>
-              <h3 className="font-bold text-xl text-slate-900 tracking-tight">
+              <h3 className="font-editorial text-2xl font-normal text-[#1A1A1E]">
                 Complete Session Package (.ZIP)
               </h3>
-              <p className="text-xs text-slate-500 mt-1 max-w-md">
+              <p className="text-xs text-[#53402C] mt-1 max-w-md">
                 Includes all generated high-res visual explainers, embedded XMP metadata tags, and plain-language PDF summary.
               </p>
             </div>
@@ -124,7 +123,7 @@ export const ExportPage: React.FC = () => {
           <button
             onClick={handleDownloadZip}
             disabled={isDownloadingZip}
-            className="px-6 py-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs tracking-wider shadow-2xs active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 transition-colors flex-shrink-0"
+            className="btn-clinia-vital py-3 px-6 text-xs font-mono uppercase tracking-wider disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 transition-all flex-shrink-0"
           >
             {isDownloadingZip ? (
               <>
@@ -134,7 +133,7 @@ export const ExportPage: React.FC = () => {
             ) : (
               <>
                 <Download className="w-4 h-4" />
-                <span>DOWNLOAD ZIP BUNDLE</span>
+                <span>Download ZIP Bundle</span>
               </>
             )}
           </button>
