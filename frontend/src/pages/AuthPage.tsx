@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Sparkles, Loader2, ArrowLeft, Lock, Mail, User, Building, CheckCircle2 } from 'lucide-react';
+import { Loader2, ArrowLeft, Lock, Mail, User, Building, CheckCircle2, Check, ArrowRight } from 'lucide-react';
 import { apiClient, UserProfile } from '../api/client';
 
 interface AuthPageProps {
@@ -71,139 +71,104 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     e.preventDefault();
     setErrorMsg(null);
     setSuccessMsg(null);
-    setLoading(true);
 
-    const cleanEmail = email.trim().toLowerCase();
+    if (!email || !password) {
+      setErrorMsg('Please enter both email and password.');
+      return;
+    }
+
+    if (mode === 'register' && !name) {
+      setErrorMsg('Please enter your full name.');
+      return;
+    }
+
+    setLoading(true);
 
     try {
       if (mode === 'login') {
-        if (!cleanEmail || !password) {
-          setErrorMsg('Please enter both your email address and password.');
-          setLoading(false);
-          return;
-        }
+        let authSuccess = false;
+        let loggedInUser: UserProfile | null = null;
 
-        // 1. Try backend authentication first
-        let backendUser: UserProfile | null = null;
         try {
-          const res = await apiClient.auth.login(cleanEmail, password, rememberMe);
+          const res = await apiClient.auth.login(email.trim(), password, rememberMe);
           if (res.success && res.data) {
-            backendUser = res.data.user;
+            authSuccess = true;
+            loggedInUser = res.data.user;
             const storage = rememberMe ? localStorage : sessionStorage;
             storage.setItem('pv_token', res.data.token);
             storage.setItem('pv_user', JSON.stringify(res.data.user));
           }
         } catch {
-          // Backend offline - gracefully continue with local verification
+          // Fall back to client-side credential store if backend offline
         }
 
-        if (backendUser) {
-          setSuccessMsg('Welcome back! Entering studio...');
-          setTimeout(() => onSuccess(backendUser!), 350);
-          return;
-        }
-
-        // 2. Local Fallback Verification (Zero-blocking)
-        const localAccounts = getLocalAccounts();
-        const account = localAccounts[cleanEmail];
-
-        if (account) {
-          if (account.passwordHash && account.passwordHash !== password && password !== 'password123') {
-            setErrorMsg('Incorrect password. Please verify your password or use 1-Click Demo Login.');
-            setLoading(false);
-            return;
+        if (!authSuccess) {
+          const accounts = getLocalAccounts();
+          const target = accounts[email.trim().toLowerCase()];
+          if (target && target.passwordHash === password) {
+            authSuccess = true;
+            loggedInUser = {
+              id: `usr-${Date.now().toString(36)}`,
+              name: target.name,
+              email: target.email,
+              organization: target.organization,
+              role: target.role,
+            };
+            const storage = rememberMe ? localStorage : sessionStorage;
+            storage.setItem('pv_token', `tok_${Date.now()}`);
+            storage.setItem('pv_user', JSON.stringify(loggedInUser));
           }
-
-          const userProfile: UserProfile = {
-            id: `usr-${cleanEmail.replace(/[^a-z0-9]/g, '')}`,
-            name: account.name || cleanEmail.split('@')[0],
-            email: cleanEmail,
-            organization: account.organization || 'Policyholder Studio',
-            role: account.role || 'Policyholder',
-          };
-
-          const storage = rememberMe ? localStorage : sessionStorage;
-          storage.setItem('pv_token', `tok_${Date.now()}`);
-          storage.setItem('pv_user', JSON.stringify(userProfile));
-
-          setSuccessMsg('Welcome back! Entering studio...');
-          setTimeout(() => onSuccess(userProfile), 350);
-          return;
         }
 
-        // If account not registered yet, auto-provision and sign in seamlessly!
-        const autoName = cleanEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-        const userProfile: UserProfile = {
-          id: `usr-${Date.now()}`,
-          name: autoName,
-          email: cleanEmail,
-          organization: 'Policyholder Studio',
-          role: 'Policyholder',
-        };
-
-        saveLocalAccount({
-          name: autoName,
-          email: cleanEmail,
-          passwordHash: password,
-          organization: 'Policyholder Studio',
-          role: 'Policyholder',
-        });
-
-        const storage = rememberMe ? localStorage : sessionStorage;
-        storage.setItem('pv_token', `tok_${Date.now()}`);
-        storage.setItem('pv_user', JSON.stringify(userProfile));
-
-        setSuccessMsg('Account authorized! Entering studio...');
-        setTimeout(() => onSuccess(userProfile), 350);
+        if (authSuccess && loggedInUser) {
+          setSuccessMsg('Authentication successful! Launching studio...');
+          setTimeout(() => onSuccess(loggedInUser!), 350);
+        } else {
+          setErrorMsg('Invalid email or password. Use demo credentials or register a new account.');
+        }
       } else {
         // Register Mode
-        if (!name.trim() || !cleanEmail || !password) {
-          setErrorMsg('Please complete all required fields.');
-          setLoading(false);
-          return;
-        }
-        if (password.length < 6) {
-          setErrorMsg('Password must be at least 6 characters long.');
-          setLoading(false);
-          return;
-        }
+        const userProfile: UserProfile = {
+          id: `usr-${Date.now().toString(36)}`,
+          name: name.trim(),
+          email: email.trim(),
+          organization: organization.trim() || 'Independent',
+          role: role,
+        };
 
-        // 1. Try backend registration
-        let backendUser: UserProfile | null = null;
         try {
-          const res = await apiClient.auth.register(name.trim(), cleanEmail, password, organization, role);
+          const res = await apiClient.auth.register(
+            name.trim(),
+            email.trim(),
+            password,
+            organization.trim() || 'Independent',
+            role
+          );
           if (res.success && res.data) {
-            backendUser = res.data.user;
             const storage = rememberMe ? localStorage : sessionStorage;
             storage.setItem('pv_token', res.data.token);
             storage.setItem('pv_user', JSON.stringify(res.data.user));
+            setSuccessMsg('Account registered successfully! Entering studio...');
+            setTimeout(() => onSuccess(res.data!.user), 350);
+            return;
           }
         } catch {
-          // Backend offline - continue locally
+          // Save local backup account
         }
 
-        // 2. Always persist account locally
         saveLocalAccount({
           name: name.trim(),
-          email: cleanEmail,
+          email: email.trim(),
           passwordHash: password,
-          organization: organization.trim() || 'Personal',
-          role,
+          organization: organization.trim() || 'Independent',
+          role: role,
         });
-
-        const userProfile: UserProfile = backendUser || {
-          id: `usr-${Date.now()}`,
-          name: name.trim(),
-          email: cleanEmail,
-          organization: organization.trim() || 'Personal',
-          role,
-        };
 
         const storage = rememberMe ? localStorage : sessionStorage;
         storage.setItem('pv_token', `tok_${Date.now()}`);
         storage.setItem('pv_user', JSON.stringify(userProfile));
 
-        setSuccessMsg('Account created successfully! Launching studio...');
+        setSuccessMsg('Account registered! Launching studio...');
         setTimeout(() => onSuccess(userProfile), 350);
       }
     } catch (err: any) {
@@ -218,7 +183,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     setPassword('password123');
     setLoading(true);
     setErrorMsg(null);
-    setSuccessMsg('Demo access verified! Launching studio...');
+    setSuccessMsg('Demo credentials verified! Opening studio...');
 
     const demoUser: UserProfile = {
       id: 'usr-demo-01',
@@ -236,9 +201,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         setTimeout(() => onSuccess(res.data!.user), 300);
         return;
       }
-    } catch {
-      // Offline fallback
-    }
+    } catch {}
 
     localStorage.setItem('pv_token', 'tok_demo_active');
     localStorage.setItem('pv_user', JSON.stringify(demoUser));
@@ -246,66 +209,73 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-80px)] p-4 sm:p-8 bg-gradient-to-br from-orange-50 via-white to-pink-50 relative">
-      {/* Back to Home Pill */}
+    <div className="min-h-[calc(100vh-65px)] bg-[#FBFBFD] flex items-center justify-center p-4 sm:p-8 relative">
+      {/* Back to Home action */}
       <button
         onClick={onBackToHome}
-        className="absolute top-6 left-6 sm:left-12 flex items-center space-x-2 text-xs font-bold text-slate-600 hover:text-orange-600 bg-white/80 backdrop-blur-sm border border-slate-200 px-3.5 py-2 rounded-xl shadow-sm transition-all"
+        className="absolute top-6 left-6 sm:left-12 flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-2xs transition-colors"
       >
         <ArrowLeft size={14} />
-        <span>Back to Home</span>
+        <span>Back to Overview</span>
       </button>
 
-      <div className="max-w-5xl w-full bg-white rounded-[32px] overflow-hidden shadow-2xl grid md:grid-cols-2 border border-slate-100 my-8">
-        {/* LEFT SIDE: Brand Showcase (Identical to EvalAI layout) */}
-        <div className="flex-col justify-between hidden md:flex p-12 lg:p-14 bg-gradient-to-br from-orange-50 via-white to-pink-50 relative overflow-hidden">
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center justify-center w-12 h-12 text-lg font-extrabold text-white shadow-lg rounded-2xl bg-gradient-to-r from-orange-500 to-pink-600">
-              PV
-            </div>
-            <div>
-              <span className="text-2xl font-bold text-slate-900 tracking-tight">
-                Policy<span className="text-orange-500">Vision</span>
-              </span>
-              <span className="ml-2 bg-orange-100 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                2.0
-              </span>
-            </div>
-          </div>
-
-          {/* Concentric Orbiting Rings Graphic */}
-          <div className="flex justify-center my-8">
-            <div className="relative w-64 h-64">
-              <div className="absolute inset-0 border-2 border-orange-200/60 rounded-full animate-[spin_20s_linear_infinite]" />
-              <div className="absolute border-2 border-pink-200/60 rounded-full inset-6 animate-[spin_15s_linear_infinite_reverse]" />
-              <div className="absolute border-2 border-orange-100 rounded-full inset-14" />
-              <div className="absolute flex items-center justify-center bg-white rounded-full shadow-2xl inset-20 border border-slate-100">
-                <Shield className="w-12 h-12 text-orange-500" />
+      <div className="max-w-4xl w-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden grid md:grid-cols-12 my-6">
+        {/* Left Column: Security & Compliance Specs (De-slopped) */}
+        <div className="md:col-span-5 bg-slate-900 text-white p-8 sm:p-10 flex flex-col justify-between">
+          <div className="space-y-6">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-orange-600 text-white flex items-center justify-center font-bold text-xs tracking-wider">
+                PV
               </div>
-              <div className="absolute w-4 h-4 bg-orange-500 rounded-full left-2 top-16 shadow-md shadow-orange-500/30" />
-              <div className="absolute w-5 h-5 bg-pink-500 rounded-full right-2 top-32 shadow-md shadow-pink-500/30" />
-              <div className="absolute w-3 h-3 bg-amber-400 rounded-full bottom-16 right-10 shadow-md shadow-amber-400/30" />
+              <span className="text-base font-extrabold tracking-tight">
+                PolicyVision AI
+              </span>
+            </div>
+
+            <div>
+              <h2 className="text-xl font-bold tracking-tight text-white">
+                Deterministic Policy Intelligence
+              </h2>
+              <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                Visual synthesis and RAG querying designed for insurance professionals, legal compliance officers, and policyholders.
+              </p>
+            </div>
+
+            <div className="space-y-3 pt-2 text-xs font-mono text-slate-300">
+              <div className="flex items-start gap-2.5">
+                <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <span>IRDAI Three-Section Invariant</span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <span>4-Hour Ephemeral In-Memory Storage</span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <span>Page-Level Vector Grounding Citations</span>
+              </div>
             </div>
           </div>
 
-          <div>
-            <div className="inline-flex items-center gap-2 text-xs font-bold text-orange-600 border border-orange-200 rounded-full px-3 py-1 bg-white mb-3 shadow-sm">
-              <Sparkles size={12} className="text-orange-500" />
-              <span>Grounded Insurance Visuals</span>
+          <div className="pt-8 border-t border-slate-800">
+            <div className="text-[11px] font-mono text-slate-400">
+              Demo Access Available
             </div>
-            <h2 className="text-2xl lg:text-3xl font-extrabold text-slate-900 leading-tight">
-              AI Policy Visual Studio
-            </h2>
-            <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-              Synthesize 50-page complex contracts into clear, human-readable visual infographics with 100% document grounding.
-            </p>
+            <button
+              type="button"
+              onClick={handleQuickDemoLogin}
+              className="mt-2 w-full text-xs font-semibold py-2 px-3 bg-slate-800 hover:bg-slate-700 text-white rounded-lg border border-slate-700 transition-colors flex items-center justify-between"
+            >
+              <span>Auto-Fill Demo Account</span>
+              <ArrowRight className="w-3.5 h-3.5 text-orange-400" />
+            </button>
           </div>
         </div>
 
-        {/* RIGHT SIDE: Auth Form */}
-        <div className="flex flex-col justify-center p-8 sm:p-12 lg:p-14 bg-white">
-          {/* Login / Register Switcher Pill */}
-          <div className="flex p-1.5 mb-8 rounded-full bg-slate-50 border border-slate-200 shadow-sm">
+        {/* Right Column: Clean Form */}
+        <div className="md:col-span-7 p-8 sm:p-10 bg-white flex flex-col justify-center">
+          {/* Switcher Tab */}
+          <div className="flex p-1 mb-6 rounded-xl bg-slate-100 border border-slate-200">
             <button
               type="button"
               onClick={() => {
@@ -313,9 +283,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 setErrorMsg(null);
                 setSuccessMsg(null);
               }}
-              className={`flex-1 py-2.5 text-xs font-bold text-center rounded-full transition-all ${
+              className={`flex-1 py-1.5 text-xs font-semibold text-center rounded-lg transition-all ${
                 mode === 'login'
-                  ? 'bg-gradient-to-r from-orange-500 to-pink-600 text-white shadow-md shadow-orange-500/20'
+                  ? 'bg-white text-slate-900 shadow-2xs font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -328,9 +298,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 setErrorMsg(null);
                 setSuccessMsg(null);
               }}
-              className={`flex-1 py-2.5 text-xs font-bold text-center rounded-full transition-all ${
+              className={`flex-1 py-1.5 text-xs font-semibold text-center rounded-lg transition-all ${
                 mode === 'register'
-                  ? 'bg-gradient-to-r from-orange-500 to-pink-600 text-white shadow-md shadow-orange-500/20'
+                  ? 'bg-white text-slate-900 shadow-2xs font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -338,43 +308,43 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             </button>
           </div>
 
-          <div className="mb-6">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-              {mode === 'login' ? 'Welcome Back' : 'Create an Account'}
-            </h2>
-            <p className="mt-1.5 text-xs sm:text-sm text-slate-500">
+          <div className="mb-5">
+            <h3 className="text-xl font-bold text-slate-900">
+              {mode === 'login' ? 'Sign In to PolicyVision' : 'Create an Account'}
+            </h3>
+            <p className="text-xs text-slate-500 mt-1">
               {mode === 'login'
-                ? 'Enter your credentials to access the policy studio'
-                : 'Join PolicyVision to visualize and analyze insurance policies'}
+                ? 'Enter your credentials to access the document studio.'
+                : 'Register to analyze policies, verify clauses, and export infographics.'}
             </p>
           </div>
 
           {errorMsg && (
-            <div className="mb-5 p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl shadow-sm">
+            <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-lg">
               {errorMsg}
             </div>
           )}
 
           {successMsg && (
-            <div className="mb-5 p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl shadow-sm flex items-center space-x-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-              <span className="font-semibold">{successMsg}</span>
+            <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-lg flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{successMsg}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3.5">
             {mode === 'register' && (
               <>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Full Name</label>
                   <div className="relative">
-                    <User className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                    <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="e.g. Chaitanya Mohan"
-                      className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-100 rounded-xl text-xs sm:text-sm text-slate-900 outline-none transition"
+                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 focus:border-slate-900 focus:bg-white rounded-lg text-xs text-slate-900 outline-none transition-colors"
                     />
                   </div>
                 </div>
@@ -383,13 +353,13 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Organization</label>
                     <div className="relative">
-                      <Building className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                      <Building className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                       <input
                         type="text"
                         value={organization}
                         onChange={(e) => setOrganization(e.target.value)}
-                        placeholder="Company/Self"
-                        className="w-full pl-11 pr-3 py-3 bg-slate-50 border border-slate-200 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-100 rounded-xl text-xs text-slate-900 outline-none transition"
+                        placeholder="Company/Individual"
+                        className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 focus:border-slate-900 focus:bg-white rounded-lg text-xs text-slate-900 outline-none transition-colors"
                       />
                     </div>
                   </div>
@@ -399,11 +369,11 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     <select
                       value={role}
                       onChange={(e) => setRole(e.target.value as any)}
-                      className="w-full px-3 py-3 bg-slate-50 border border-slate-200 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-100 rounded-xl text-xs text-slate-900 outline-none transition font-medium"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 focus:border-slate-900 focus:bg-white rounded-lg text-xs text-slate-900 outline-none transition-colors"
                     >
                       <option value="Policyholder">Policyholder</option>
                       <option value="Insurance Agent">Insurance Agent</option>
-                      <option value="Compliance Auditor">Auditor</option>
+                      <option value="Compliance Auditor">Compliance Auditor</option>
                     </select>
                   </div>
                 </div>
@@ -413,13 +383,13 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">Email Address</label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-100 rounded-xl text-xs sm:text-sm text-slate-900 outline-none transition"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 focus:border-slate-900 focus:bg-white rounded-lg text-xs text-slate-900 outline-none transition-colors"
                 />
               </div>
             </div>
@@ -427,45 +397,46 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">Password</label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-100 rounded-xl text-xs sm:text-sm text-slate-900 outline-none transition"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 focus:border-slate-900 focus:bg-white rounded-lg text-xs text-slate-900 outline-none transition-colors"
                 />
               </div>
             </div>
 
             <div className="flex items-center justify-between text-xs pt-1">
-              <label className="flex items-center space-x-2 text-slate-600 cursor-pointer">
+              <label className="flex items-center gap-2 text-slate-600 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="rounded border-slate-300 text-orange-500 focus:ring-orange-400"
+                  className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
                 />
                 <span>Remember me</span>
               </label>
+
               <button
                 type="button"
                 onClick={handleQuickDemoLogin}
-                className="text-orange-600 font-bold hover:underline"
+                className="text-orange-600 font-semibold hover:underline"
               >
-                1-Click Demo Login
+                1-Click Demo Fill
               </button>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-orange-500 to-pink-600 text-white font-bold text-sm shadow-lg shadow-orange-500/25 hover:opacity-95 active:scale-[0.99] disabled:opacity-50 transition-all flex items-center justify-center space-x-2 cursor-pointer"
+              className="w-full btn-primary text-xs py-2.5 mt-2 flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Processing...</span>
+                  <span>Authenticating...</span>
                 </>
               ) : (
                 <span>{mode === 'login' ? 'Sign In to Studio' : 'Create Free Account'}</span>
@@ -473,16 +444,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             </button>
           </form>
 
-          {/* Demo account hint */}
-          <div className="mt-6 pt-5 border-t border-slate-100 text-center text-xs text-slate-500">
-            <span>Demo credentials: </span>
-            <code className="text-orange-600 font-bold bg-orange-50 px-1.5 py-0.5 rounded">
-              demo@policyvision.ai
-            </code>
+          {/* Credentials hint */}
+          <div className="mt-5 pt-4 border-t border-slate-100 text-center text-xs text-slate-500 font-mono">
+            <span>Demo: </span>
+            <span className="text-slate-800 font-bold">demo@policyvision.ai</span>
             <span> / </span>
-            <code className="text-orange-600 font-bold bg-orange-50 px-1.5 py-0.5 rounded">
-              password123
-            </code>
+            <span className="text-slate-800 font-bold">password123</span>
           </div>
         </div>
       </div>

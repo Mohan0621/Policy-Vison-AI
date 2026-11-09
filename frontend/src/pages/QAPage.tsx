@@ -143,7 +143,7 @@ export const QAPage: React.FC<QAPageProps> = ({ currentLanguage, currentStyle })
               <div
                 className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-5 shadow-sm ${
                   m.role === 'user'
-                    ? 'bg-gradient-to-r from-orange-500 to-pink-600 text-white rounded-tr-none'
+                    ? 'bg-slate-900 text-white rounded-tr-none'
                     : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none'
                 }`}
               >
@@ -204,7 +204,7 @@ export const QAPage: React.FC<QAPageProps> = ({ currentLanguage, currentStyle })
         <button
           type="submit"
           disabled={isLoading || !inputQuestion.trim()}
-          className="absolute right-2 p-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-pink-600 text-white shadow-md shadow-orange-500/20 hover:opacity-90 disabled:opacity-40 disabled:pointer-events-none transition-all"
+          className="absolute right-2 p-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white shadow-2xs hover:opacity-90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
         >
           <Send className="w-4 h-4" />
         </button>

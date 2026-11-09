@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import {
-  Shield, FileText, CheckCircle2, ChevronRight, Sparkles,
-  Globe, Layers, Eye, Download, Play, Pause
+  ArrowRight, Play, Pause, Download, Check
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -10,9 +9,15 @@ interface LandingPageProps {
   onRegister?: () => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onEnterStudio, onSignIn, onRegister }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({
+  onEnterStudio,
+  onSignIn,
+  onRegister,
+}) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
+  const [activeSample, setActiveSample] = useState<'care' | 'star'>('care');
+  const [viewMode, setViewMode] = useState<'video' | 'visual'>('video');
 
   const togglePlay = () => {
     if (videoRef.current) {
@@ -25,318 +30,429 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterStudio, onSignI
       }
     }
   };
+
+  const sampleData = {
+    care: {
+      title: 'Care Optima Health Insurance',
+      type: 'Individual Comprehensive Schedule',
+      policyNo: 'POL-HLT-2026-981249',
+      sumInsured: '₹ 15,00,000',
+      waitingPeriod: '30 Days Initial',
+      pedClause: '36 Months Pre-Existing Disease',
+      excerpt: `Section 4.1 Initial Waiting Period: A mandatory waiting period of 30 days from the commencement date shall apply, except in cases of accidental injury.
+Section 4.2 Pre-Existing Conditions: Medical conditions declared or diagnosed prior to policy inception are subject to a 36-month waiting period before coverage applies.
+Section 7.1 Cashless Claims: Intimation must be submitted to the Network Hospital TPA desk at least 48 hours prior for planned admissions, or within 24 hours for emergency hospitalizations.`,
+      pdfUrl: '/Care_Optima_Health_Insurance_Policy.pdf',
+    },
+    star: {
+      title: 'Star Comprehensive Health Floater',
+      type: 'Family Floater (4 Members)',
+      policyNo: 'POL-FAM-2026-440912',
+      sumInsured: '₹ 25,00,000',
+      waitingPeriod: '30 Days Initial',
+      pedClause: '24 Months Pre-Existing Disease',
+      excerpt: `Section 3.1 Sum Insured Floater: Aggregate coverage of ₹25,00,000 applies across Primary Insured, Spouse, and two Dependent Children.
+Section 5.2 Automatic Restoration: 100% of the Basic Sum Insured is reinstated once per policy period upon complete exhaustion.
+Section 8.3 Cashless Network: Pre-authorization requests processed via Network Hospital Desk within 2 hours of document receipt.`,
+      pdfUrl: '/Star_Comprehensive_Family_Health_Policy.pdf',
+    },
+  };
+
+  const currentDoc = sampleData[activeSample];
+
   return (
-    <div className="min-h-screen bg-white text-slate-900 font-sans">
-      {/* ── Hero Section (Refreshing light gradient inspired by EvalAI) ── */}
-      <section className="w-full min-h-[calc(100vh-80px)] px-6 sm:px-12 lg:px-20 py-16 lg:py-24 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center bg-gradient-to-br from-orange-50 via-white to-pink-50 relative overflow-hidden">
-        {/* Soft background ambient glow */}
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-orange-200/30 rounded-full blur-3xl pointer-events-none -z-10" />
-        <div className="absolute bottom-10 left-10 w-96 h-96 bg-pink-200/20 rounded-full blur-3xl pointer-events-none -z-10" />
-
-        <div className="space-y-8 z-10">
-          <div className="inline-flex items-center gap-2 text-xs font-bold text-orange-600 border border-orange-200 rounded-full px-3.5 py-1.5 bg-orange-50/80 shadow-sm">
-            <Sparkles size={13} className="text-orange-500" />
-            <span>Introducing PolicyVision AI 2.0 • IRDAI Grounded</span>
-          </div>
-
-          <h1 className="text-5xl sm:text-6xl xl:text-7xl font-extrabold leading-[1.08] text-slate-900 tracking-tight">
-            AI-Powered <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-pink-600">
-              Insurance Visuals
-            </span>
-          </h1>
-
-          <p className="text-lg sm:text-xl text-slate-600 max-w-xl leading-relaxed">
-            Transform dense 50-page legal contracts into crystal-clear, document-grounded visual infographics with zero hallucinations. Built for insurance underwriters, brokers, and modern policyholders.
-          </p>
-
-          <div className="flex flex-wrap items-center gap-4 pt-2">
-            <button
-              onClick={onRegister || onEnterStudio}
-              className="flex items-center gap-2.5 px-8 py-4 rounded-xl bg-gradient-to-r from-orange-500 to-pink-600 text-white font-bold text-base shadow-lg shadow-orange-500/25 hover:opacity-95 hover:shadow-xl hover:shadow-orange-500/30 hover:-translate-y-0.5 transition-all"
-            >
-              <span>Get Started Now</span>
-              <ChevronRight size={18} />
-            </button>
-            <button
-              onClick={onSignIn || onEnterStudio}
-              className="flex items-center gap-2 px-6 py-4 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-base hover:bg-slate-50 hover:border-slate-300 shadow-sm transition"
-            >
-              <Eye size={17} className="text-orange-500" />
-              <span>Sign In to Studio</span>
-            </button>
-          </div>
-
-          <div className="flex items-center gap-6 pt-4 text-xs font-medium text-slate-500">
-            <div className="flex items-center gap-1.5">
-              <CheckCircle2 size={16} className="text-emerald-500" />
-              <span>Zero Hallucinations</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <CheckCircle2 size={16} className="text-emerald-500" />
-              <span>1024×1024 150 DPI</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <CheckCircle2 size={16} className="text-emerald-500" />
-              <span>8 Indian Scripts</span>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Hero Interactive Card / Visual Preview Mockup ── */}
-        <div className="relative z-10">
-          <div className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200/80 p-3 sm:p-5">
-            {/* Header tag */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 px-2">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-xs">
-                  <Shield size={16} />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-800">Care_Health_Optima_Policy.pdf</p>
-                  <p className="text-[10px] text-slate-400">100% Document Grounded • 48 Chunks Indexed</p>
-                </div>
+    <div className="min-h-screen bg-[#FBFBFD] text-slate-900 font-sans">
+      {/* ── Editorial Header Bar ── */}
+      <section className="border-b border-slate-200 bg-white">
+        <div className="max-w-7xl mx-auto px-6 sm:px-12 py-16 sm:py-24">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            {/* Left Column: Headline and Positioning */}
+            <div className="lg:col-span-7 space-y-6">
+              <div className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 bg-slate-100 border border-slate-200 rounded-md px-2.5 py-1">
+                <span>IRDAI Regulatory Architecture</span>
+                <span className="text-slate-400">•</span>
+                <span className="text-orange-700 font-bold">PolicyVision Studio 2.0</span>
               </div>
-              <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
-                ● Ready
-              </span>
-            </div>
 
-            {/* Live Video Demo Player */}
-            <div className="mt-4 rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 relative aspect-[12/8] shadow-inner group">
-              <video
-                ref={videoRef}
-                src="/policyvision_demo.mp4"
-                poster="/clean_policy_infographic.png"
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-full h-full object-cover"
-              />
+              <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-950 leading-[1.1]">
+                Insurance policies, <br />
+                translated into visual clarity.
+              </h1>
 
-              {/* Top floating controls */}
-              <div className="absolute top-3 right-3 flex items-center space-x-2">
-                <span className="px-2.5 py-1 rounded-full bg-slate-900/80 backdrop-blur-md text-[10px] font-bold text-orange-400 border border-white/10 uppercase tracking-wider">
-                  Live Synthesis Loop
-                </span>
+              <p className="text-lg text-slate-600 leading-relaxed max-w-2xl font-normal">
+                Convert dense 50-page legal contracts into verified, plain-language visual explainers across Inclusions, Exclusions, and Cashless Claims. Every visual is 100% grounded in source text with verifiable clause citations.
+              </p>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-3 pt-2">
                 <button
-                  type="button"
-                  onClick={togglePlay}
-                  className="p-1.5 rounded-full bg-slate-900/80 backdrop-blur-md text-white hover:text-orange-400 border border-white/10 transition-colors"
-                  title={isPlaying ? 'Pause Demo' : 'Play Demo'}
+                  onClick={onRegister || onEnterStudio}
+                  className="btn-accent px-6 py-3.5 text-sm font-semibold shadow-sm hover:shadow"
                 >
-                  {isPlaying ? <Pause size={14} /> : <Play size={14} />}
+                  <span>Launch Policy Studio</span>
+                  <ArrowRight className="w-4 h-4 ml-2" />
                 </button>
+
+                <button
+                  onClick={onSignIn || onEnterStudio}
+                  className="btn-secondary px-5 py-3.5 text-sm font-semibold"
+                >
+                  <span>Sign In</span>
+                </button>
+
+                <a
+                  href="#workbench"
+                  className="text-xs font-semibold text-slate-600 hover:text-slate-900 px-3 py-2 transition-colors ml-2"
+                >
+                  View Sample Policy Breakdown ↓
+                </a>
               </div>
 
-              {/* Bottom gradient bar info */}
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/50 to-transparent p-4 flex items-end justify-between">
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="text-[11px] font-bold text-white uppercase tracking-wider">
-                      Neural Extraction &amp; Visual Compilation
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-slate-300 mt-0.5">
-                    PyMuPDF Scanner ➔ Cosine Grounding ➔ 1024×1024 Publication Layout
-                  </p>
+              {/* Verified Technical Telemetry */}
+              <div className="pt-6 border-t border-slate-100 flex flex-wrap items-center gap-y-2 gap-x-6 text-xs text-slate-500 font-mono">
+                <div className="flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>100% Document Grounded</span>
                 </div>
+                <div className="flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>1024×1024 150 DPI</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>8 Indic Languages</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>PyMuPDF Engine</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Key Diagnostic Summary Card */}
+            <div className="lg:col-span-5">
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-5">
+                <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold text-xs">
+                      PV
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-slate-900">Verification Spec</div>
+                      <div className="text-[11px] text-slate-500">Document Parsing &amp; Synthesis</div>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-medium">
+                    ACTIVE STANDARDS
+                  </span>
+                </div>
+
+                <div className="space-y-3 font-mono text-xs">
+                  <div className="flex items-center justify-between py-1.5 border-b border-slate-50">
+                    <span className="text-slate-500">Decomposition</span>
+                    <span className="text-slate-900 font-semibold">3 Mandatory Invariants</span>
+                  </div>
+                  <div className="flex items-center justify-between py-1.5 border-b border-slate-50">
+                    <span className="text-slate-500">Reading Level</span>
+                    <span className="text-slate-900 font-semibold">Grade 6.8 (Flesch-Kincaid)</span>
+                  </div>
+                  <div className="flex items-center justify-between py-1.5 border-b border-slate-50">
+                    <span className="text-slate-500">Vector Grounding</span>
+                    <span className="text-slate-900 font-semibold">0.15 Cosine Similarity Floor</span>
+                  </div>
+                  <div className="flex items-center justify-between py-1.5 border-b border-slate-50">
+                    <span className="text-slate-500">Output Standard</span>
+                    <span className="text-slate-900 font-semibold">1024×1024 PNG / XMP Metadata</span>
+                  </div>
+                  <div className="flex items-center justify-between py-1.5">
+                    <span className="text-slate-500">Session Privacy</span>
+                    <span className="text-slate-900 font-semibold">4-Hour Automatic Purge</span>
+                  </div>
+                </div>
+
                 <button
                   type="button"
                   onClick={onEnterStudio}
-                  className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-orange-500 to-pink-600 hover:opacity-95 text-white text-xs font-bold shadow-md transition-all flex items-center space-x-1"
+                  className="w-full btn-primary text-xs py-2.5"
                 >
-                  <span>Launch</span>
-                  <ChevronRight size={14} />
+                  Open Studio Dropzone
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Interactive Policy Decomposition Workbench ── */}
+      <section id="workbench" className="max-w-7xl mx-auto px-6 sm:px-12 py-20">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+          <div>
+            <div className="text-xs font-semibold text-orange-600 uppercase tracking-wider mb-1">
+              Interactive Workbench
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight">
+              Contract Text vs Verified Visual Synthesis
+            </h2>
+          </div>
+
+          {/* Sample Selector Tabs */}
+          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <button
+              type="button"
+              onClick={() => setActiveSample('care')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                activeSample === 'care'
+                  ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80 font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Care Optima (Individual)
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveSample('star')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                activeSample === 'star'
+                  ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80 font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Star Comprehensive (Floater)
+            </button>
+          </div>
+        </div>
+
+        {/* The Split Workbench */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Left Side: Policy Schedule Contract Excerpt */}
+          <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">{currentDoc.title}</h3>
+                <p className="text-xs text-slate-500 font-mono mt-0.5">{currentDoc.policyNo}</p>
+              </div>
+              <a
+                href={currentDoc.pdfUrl}
+                download
+                className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg transition-colors"
+                title="Download original test policy PDF"
+              >
+                <Download className="w-3.5 h-3.5 text-slate-500" />
+                <span>PDF</span>
+              </a>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-xs font-mono">
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="text-slate-400 block text-[10px] uppercase">Sum Insured</span>
+                <span className="font-bold text-slate-900 text-sm">{currentDoc.sumInsured}</span>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="text-slate-400 block text-[10px] uppercase">PED Waiting</span>
+                <span className="font-bold text-slate-900 text-sm">{currentDoc.pedClause}</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                Raw Policy Schedule Clauses
+              </div>
+              <div className="bg-slate-900 text-slate-200 font-mono text-xs p-4 rounded-xl leading-relaxed whitespace-pre-line border border-slate-800 shadow-inner max-h-60 overflow-y-auto">
+                {currentDoc.excerpt}
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={onEnterStudio}
+                className="w-full btn-accent text-xs py-2.5"
+              >
+                Load this Policy into Studio
+              </button>
+            </div>
+          </div>
+
+          {/* Right Side: Visual Explainer / Live Video Preview */}
+          <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <h3 className="text-sm font-bold text-slate-900">Visual Synthesis Output</h3>
+                <span className="text-xs font-mono text-slate-400">(1024×1024 Grounded)</span>
+              </div>
+
+              {/* View toggle */}
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('video')}
+                  className={`px-2.5 py-1 rounded font-medium transition-colors ${
+                    viewMode === 'video' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'text-slate-600'
+                  }`}
+                >
+                  Loop Video
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('visual')}
+                  className={`px-2.5 py-1 rounded font-medium transition-colors ${
+                    viewMode === 'visual' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'text-slate-600'
+                  }`}
+                >
+                  Infographic
                 </button>
               </div>
             </div>
 
-            {/* Grounding metrics badge */}
-            <div className="mt-4 grid grid-cols-3 gap-3 text-center">
+            {/* Display Viewport */}
+            <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-950 aspect-[16/10] flex items-center justify-center">
+              {viewMode === 'video' ? (
+                <>
+                  <video
+                    ref={videoRef}
+                    src="/policyvision_demo.mp4"
+                    poster="/clean_policy_infographic.png"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-3 right-3 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={togglePlay}
+                      className="p-1.5 rounded-lg bg-slate-900/80 text-white hover:text-orange-400 border border-white/10 transition-colors"
+                      title={isPlaying ? 'Pause' : 'Play'}
+                    >
+                      {isPlaying ? <Pause size={14} /> : <Play size={14} />}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <img
+                  src="/clean_policy_infographic.png"
+                  alt="Verified Policy Infographic"
+                  className="w-full h-full object-contain bg-slate-900"
+                />
+              )}
+
+              {/* Citation Footer Pill */}
+              <div className="absolute bottom-3 left-3 right-3 bg-slate-900/90 backdrop-blur-sm border border-white/10 rounded-lg p-2.5 text-xs text-white flex items-center justify-between font-mono">
+                <div className="flex items-center gap-2">
+                  <span className="text-orange-400 font-semibold">Citations:</span>
+                  <span className="text-slate-300">Section 4.1, 4.2 &amp; Section 7.1</span>
+                </div>
+                <span className="text-emerald-400 font-bold">100% Grounded</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 text-center text-xs font-mono">
               <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                <p className="text-base font-extrabold text-slate-900">100%</p>
-                <p className="text-[10px] font-semibold text-slate-500">Verified Grounding</p>
+                <div className="font-bold text-slate-900">3 Sections</div>
+                <div className="text-[11px] text-slate-500">Covered / Excluded / Claim</div>
               </div>
-              <div className="p-2.5 bg-orange-50/60 rounded-xl border border-orange-100">
-                <p className="text-base font-extrabold text-orange-600">Grade 6.8</p>
-                <p className="text-[10px] font-semibold text-orange-700">Flesch-Kincaid</p>
+              <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                <div className="font-bold text-slate-900">&lt; 3.0s</div>
+                <div className="text-[11px] text-slate-500">Synthesis Latency</div>
               </div>
-              <div className="p-2.5 bg-pink-50/60 rounded-xl border border-pink-100">
-                <p className="text-base font-extrabold text-pink-600">8 Scripts</p>
-                <p className="text-[10px] font-semibold text-pink-700">Indic Languages</p>
+              <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                <div className="font-bold text-slate-900">150 DPI</div>
+                <div className="text-[11px] text-slate-500">XMP Metadata Embedded</div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Stats Bar ── */}
-      <div className="border-y border-slate-100 bg-slate-50 py-12">
-        <div className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-20 grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
-          <div>
-            <p className="text-5xl font-extrabold text-slate-900">100%</p>
-            <p className="text-base text-slate-600 mt-2 font-medium">Factually Grounded in Policy Passages</p>
+      {/* ── 4-Stage Architectural Pipeline (De-slopped: Sequential, Functional) ── */}
+      <section className="border-y border-slate-200 bg-white py-20">
+        <div className="max-w-7xl mx-auto px-6 sm:px-12">
+          <div className="mb-12 max-w-2xl">
+            <div className="text-xs font-semibold text-orange-600 uppercase tracking-wider mb-1">
+              Pipeline Architecture
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight">
+              Deterministic Processing, Zero Free-Form Diffusion
+            </h2>
+            <p className="text-slate-600 text-sm mt-2 leading-relaxed">
+              Every stage of PolicyVision AI is bounded by deterministic rules, regulatory compliance checks, and exact passage grounding.
+            </p>
           </div>
-          <div>
-            <p className="text-5xl font-extrabold text-orange-500">1024²</p>
-            <p className="text-base text-slate-600 mt-2 font-medium">150 DPI High-Resolution Visual Explainer</p>
-          </div>
-          <div>
-            <p className="text-5xl font-extrabold text-slate-900">&lt; 2.4s</p>
-            <p className="text-base text-slate-600 mt-2 font-medium">Average Q&A Retrieval Latency</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="bg-slate-50 rounded-xl border border-slate-200 p-5 space-y-3">
+              <div className="font-mono text-xs font-bold text-orange-600">STAGE 01</div>
+              <h3 className="font-bold text-slate-900 text-base">PyMuPDF Ingestion</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Extracts raw tokens, policy tables, and schedules from files up to 50 MB, with an OCR hook for scanned contracts.
+              </p>
+            </div>
+
+            <div className="bg-slate-50 rounded-xl border border-slate-200 p-5 space-y-3">
+              <div className="font-mono text-xs font-bold text-orange-600">STAGE 02</div>
+              <h3 className="font-bold text-slate-900 text-base">Three-Section Invariant</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Deconstructs clauses into the mandatory plain-language IRDAI format: What is Covered, What is Not Covered, and Claim Steps.
+              </p>
+            </div>
+
+            <div className="bg-slate-50 rounded-xl border border-slate-200 p-5 space-y-3">
+              <div className="font-mono text-xs font-bold text-orange-600">STAGE 03</div>
+              <h3 className="font-bold text-slate-900 text-base">Infographic Compiler</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Renders publication-ready 1024×1024 graphics with verified typography, exact waiting period charts, and claim workflows.
+              </p>
+            </div>
+
+            <div className="bg-slate-50 rounded-xl border border-slate-200 p-5 space-y-3">
+              <div className="font-mono text-xs font-bold text-orange-600">STAGE 04</div>
+              <h3 className="font-bold text-slate-900 text-base">Grounded Vector Audit</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Cosine similarity scoring strictly enforces a 0.15 threshold to eliminate ungrounded claims or hallucinated coverage terms.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* ── Core Capabilities ── */}
-      <section id="capabilities" className="py-24 max-w-7xl mx-auto px-6 sm:px-12 lg:px-20">
-        <div className="text-center space-y-3 mb-16">
-          <p className="text-xs font-bold tracking-widest text-orange-600 uppercase">Core Capabilities</p>
-          <h2 className="text-4xl sm:text-5xl font-extrabold text-slate-900">
-            Engineered for Grounded Compliance
-          </h2>
-          <p className="text-slate-600 max-w-2xl mx-auto text-lg">
-            PolicyVision AI combines PDF extraction, vector embeddings, and an infographic compiler to automate insurance policy clarity without sacrificing legal accuracy.
-          </p>
-        </div>
+      {/* ── Ready to Test Action Strip ── */}
+      <section className="max-w-7xl mx-auto px-6 sm:px-12 py-16">
+        <div className="bg-slate-900 rounded-2xl p-8 sm:p-12 text-white flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-2 max-w-xl text-center md:text-left">
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+              Test with Included IRDAI Policy Schedules
+            </h2>
+            <p className="text-slate-400 text-sm">
+              Use the built-in Care Optima or Star Health floater documents to test the ingestion, RAG questions, and visual generator immediately.
+            </p>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            {
-              icon: FileText,
-              title: '50 MB PDF Extraction',
-              desc: 'Parses complex multi-page policy schedules and scanned documents with PyMuPDF and optional OCR fallback.',
-            },
-            {
-              icon: Shield,
-              title: 'Three-Section Invariant',
-              desc: 'Enforces the mandatory plain-language decomposition: What is Covered, What is Not Covered, and How to Claim.',
-            },
-            {
-              icon: Eye,
-              title: 'Infographic Compiler',
-              desc: 'Produces publication-ready 1024x1024 PNGs with crisp typography, stat badges, and zero diffusion hieroglyphics.',
-            },
-            {
-              icon: Layers,
-              title: '0.15 Semantic Floor RAG',
-              desc: 'Strictly bounds cosine similarity to eliminate zero-relevance passage retrieval. Every fact is verified against source text.',
-            },
-            {
-              icon: Globe,
-              title: '8 Indian Languages',
-              desc: 'Preserves exact monetary limits and waiting periods across Hindi, Tamil, Telugu, Kannada, Malayalam, Bengali, Marathi, and Gujarati.',
-            },
-            {
-              icon: Download,
-              title: 'XMP Compliance Metadata',
-              desc: 'Embeds document name, policy identifier, and UTC timestamp into exported PNG headers at 150 DPI.',
-            },
-          ].map(({ icon: Icon, title, desc }) => (
-            <div
-              key={title}
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              type="button"
               onClick={onEnterStudio}
-              className="group p-8 rounded-2xl border border-slate-100 bg-white hover:border-orange-200 hover:shadow-xl hover:shadow-orange-500/5 transition-all space-y-4 cursor-pointer"
+              className="btn-accent px-6 py-3 text-sm font-semibold"
             >
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center shadow-md shadow-orange-500/20 group-hover:scale-110 transition-transform">
-                <Icon size={22} className="text-white" />
-              </div>
-              <h3 className="font-bold text-lg text-slate-900 group-hover:text-orange-600 transition-colors">{title}</h3>
-              <p className="text-sm text-slate-500 leading-relaxed">{desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Process Comparison (Traditional vs PolicyVision AI) ── */}
-      <section id="workflow" className="py-24 bg-slate-50 border-t border-slate-100">
-        <div className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-20 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <div className="space-y-6">
-            <p className="text-xs font-bold tracking-widest text-orange-600 uppercase">Comparison</p>
-            <h2 className="text-4xl font-extrabold text-slate-900 leading-tight">
-              Standardize Insurance Clarity, <br />
-              Accelerate Customer Trust
-            </h2>
-            <p className="text-slate-600 text-lg leading-relaxed">
-              Customers struggle with 50-page insurance schedules filled with legal exclusions and waiting period clauses. PolicyVision AI transforms dense terms into verified, visual clarity in seconds.
-            </p>
-            <div className="grid grid-cols-2 gap-6 pt-2">
-              <div>
-                <p className="font-bold text-slate-900 text-sm">Save Assessor Overhead</p>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">Reduces explanation queries and claims confusion by over 90%.</p>
-              </div>
-              <div>
-                <p className="font-bold text-slate-900 text-sm">Consistent Grounding</p>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">All figures derived directly from policy text without LLM hallucinations.</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Comparison Cards */}
-          <div className="space-y-4">
-            <div className="rounded-2xl border border-slate-200 p-6 bg-white shadow-sm space-y-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Traditional Insurance PDF</span>
-              <p className="text-sm font-semibold text-slate-700">Dense Legalese &amp; Hidden Exclusions</p>
-              <ul className="text-xs text-slate-500 space-y-1.5 list-disc pl-4">
-                <li>50+ pages of small print legal jargon</li>
-                <li>Ambiguous cashless hospital claim timelines</li>
-                <li>Hidden sub-limits and waiting periods scattered across clauses</li>
-              </ul>
-            </div>
-
-            <div className="rounded-2xl border-2 border-orange-500/30 p-6 bg-gradient-to-br from-orange-50/60 to-white shadow-md space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-orange-600">PolicyVision AI Explainer</span>
-                <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">100% Grounded</span>
-              </div>
-              <p className="text-sm font-bold text-slate-900">Crystal-Clear 3-Section Visual Infographic</p>
-              <ul className="text-xs text-slate-600 space-y-1.5 list-disc pl-4">
-                <li>What is Covered (Max Sum Insured, Day Care, Network facilities)</li>
-                <li>What is NOT Covered (30-day initial &amp; 36-month PED waiting periods)</li>
-                <li>How to Claim (3-step directional cashless hospital flowchart)</li>
-              </ul>
-            </div>
+              Enter Studio
+            </button>
           </div>
         </div>
       </section>
 
-      {/* ── Ready CTA Footer Banner ── */}
-      <section id="compliance" className="py-20 px-6 sm:px-12 max-w-7xl mx-auto text-center">
-        <div className="rounded-3xl bg-gradient-to-r from-orange-500 to-pink-600 p-12 sm:p-16 text-white shadow-2xl shadow-orange-500/20 relative overflow-hidden">
-          <div className="relative z-10 space-y-6 max-w-2xl mx-auto">
-            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
-              Ready to Simplify Your Insurance Policies?
-            </h2>
-            <p className="text-orange-100 text-base sm:text-lg">
-              Upload a policy document or paste a policy excerpt to generate publication-ready visual explainers immediately.
-            </p>
-            <div className="pt-2">
-              <button
-                onClick={onEnterStudio}
-                className="px-8 py-4 rounded-xl bg-white text-orange-600 font-extrabold text-base shadow-xl hover:bg-orange-50 hover:scale-105 transition-all inline-flex items-center gap-2"
-              >
-                <span>Launch Policy Studio</span>
-                <ChevronRight size={18} />
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Footer ── */}
-      <footer className="border-t border-slate-100 py-8 px-6 sm:px-12 text-center text-xs text-slate-500 bg-white">
+      {/* ── Institutional Footer ── */}
+      <footer className="border-t border-slate-200 py-8 px-6 sm:px-12 bg-white text-xs text-slate-500 font-mono">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-gradient-to-br from-orange-500 to-pink-600 text-white font-extrabold text-[10px] flex items-center justify-center">PV</div>
-            <span className="font-bold text-slate-800">PolicyVision AI</span>
-            <span>• IRDAI Regulatory Grounded Financial Architecture</span>
+            <span className="font-bold text-slate-900">PolicyVision AI</span>
+            <span>•</span>
+            <span>IRDAI Regulatory Architecture</span>
           </div>
+
           <div className="flex items-center gap-6">
             <span>150 DPI Standard</span>
-            <span>8 Indian Scripts</span>
+            <span>8 Indic Scripts</span>
             <span>&copy; 2026</span>
           </div>
         </div>

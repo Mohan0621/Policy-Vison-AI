@@ -67,22 +67,22 @@ export const CustomCursor: React.FC = () => {
       {/* Center point */}
       <div
         ref={dotRef}
-        className="fixed w-2 h-2 rounded-full bg-orange-500 shadow-sm shadow-orange-500/50 pointer-events-none will-change-transform"
+        className="fixed w-1.5 h-1.5 rounded-full bg-slate-900 pointer-events-none will-change-transform"
         style={{ transform: 'translate3d(-100px, -100px, 0)' }}
       />
 
       {/* Trailing follower ring with smooth viscous drag */}
       <div
         ref={ringRef}
-        className={`fixed flex items-center justify-center rounded-full border pointer-events-none will-change-transform transition-[width,height,background-color,border-color] duration-200 ease-out ${
+        className={`fixed flex items-center justify-center rounded-full border pointer-events-none will-change-transform transition-[width,height,background-color,border-color] duration-150 ease-out ${
           isHovered
-            ? 'w-10 h-10 bg-orange-500/10 backdrop-blur-sm border-orange-500/60'
-            : 'w-7 h-7 bg-orange-500/5 border-orange-400/50'
+            ? 'w-8 h-8 bg-slate-900/5 border-slate-900/40'
+            : 'w-5 h-5 bg-transparent border-slate-400/30'
         }`}
         style={{ transform: 'translate3d(-100px, -100px, 0)' }}
       >
         {hoverLabel && (
-          <span className="font-mono text-[9px] font-bold text-orange-600 uppercase tracking-tighter whitespace-nowrap">
+          <span className="font-mono text-[9px] font-semibold text-slate-700 uppercase tracking-tight whitespace-nowrap bg-white/90 border border-slate-200 px-1 rounded shadow-2xs">
             {hoverLabel}
           </span>
         )}

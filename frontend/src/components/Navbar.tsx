@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, RefreshCw, FileText, Eye, MessageSquare, Download, LogOut, ChevronRight } from 'lucide-react';
+import { RefreshCw, FileText, Eye, MessageSquare, Download, LogOut } from 'lucide-react';
 import { UserProfile } from '../api/client';
 
 interface NavbarProps {
@@ -24,35 +24,34 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSignOut,
 }) => {
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm px-6 sm:px-12 py-3.5">
+    <header className="sticky top-0 z-50 bg-white border-b border-slate-200 px-6 sm:px-12 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
-        {/* Brand identity (matches EvalAI style) */}
+        {/* Brand identity */}
         <div
           onClick={() => setActiveTab('landing')}
           className="flex items-center space-x-3 cursor-pointer group"
         >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center text-white font-extrabold text-sm shadow-md shadow-orange-500/20 group-hover:scale-105 transition-transform">
+          <div className="w-8 h-8 rounded-lg bg-slate-950 text-white flex items-center justify-center font-bold text-xs tracking-wider transition-colors group-hover:bg-orange-600">
             PV
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <span className="text-xl font-bold text-slate-900 tracking-tight">
-                Policy<span className="text-orange-500">Vision</span>
+              <span className="text-base font-extrabold text-slate-950 tracking-tight">
+                Policy<span className="text-orange-600">Vision</span> AI
               </span>
-              <span className="bg-orange-50 text-orange-600 border border-orange-200 text-[10px] px-2 py-0.5 rounded-full font-bold">
-                2.0
+              <span className="text-[10px] font-mono text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">
+                v2.0
               </span>
             </div>
-            <p className="text-[11px] text-slate-500 hidden sm:block">AI Insurance Visual Explainer Studio</p>
           </div>
         </div>
 
         {/* Center Navigation */}
         {user ? (
           /* Authenticated Studio Tabs */
-          <nav className="hidden md:flex items-center space-x-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
+          <nav className="hidden md:flex items-center space-x-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
             {[
-              { id: 'upload', label: 'Upload', icon: FileText },
+              { id: 'upload', label: 'Upload Document', icon: FileText },
               { id: 'viewer', label: 'Visuals & Citations', icon: Eye },
               { id: 'qa', label: 'Policy Q&A', icon: MessageSquare },
               { id: 'export', label: 'Export', icon: Download },
@@ -63,96 +62,87 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id as any)}
-                  className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                     isActive
-                      ? 'bg-white text-orange-600 shadow-sm border border-slate-200/80 font-bold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/60'
+                      ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80 font-bold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
                   }`}
                 >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-orange-500' : 'text-slate-400'}`} />
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-orange-600' : 'text-slate-400'}`} />
                   <span>{item.label}</span>
                 </button>
               );
             })}
           </nav>
         ) : (
-          /* Public Landing Navigation (EvalAI style) */
-          <nav className="hidden md:flex items-center space-x-8 text-sm font-semibold text-slate-600">
+          /* Public Landing Navigation */
+          <nav className="hidden md:flex items-center space-x-6 text-xs font-semibold text-slate-600">
             <button
               onClick={() => setActiveTab('landing')}
-              className="hover:text-orange-600 transition"
+              className="hover:text-slate-950 transition-colors"
             >
               Overview
             </button>
-            <a href="#capabilities" className="hover:text-orange-600 transition">
-              Capabilities
+            <a href="#workbench" className="hover:text-slate-950 transition-colors">
+              Workbench
             </a>
-            <a href="#workflow" className="hover:text-orange-600 transition">
-              Workflow
-            </a>
-            <a href="#compliance" className="hover:text-orange-600 transition">
-              Compliance
-            </a>
+            <span className="text-slate-300">|</span>
+            <span className="text-[11px] text-slate-400 font-mono">IRDAI Guidelines Bounded</span>
           </nav>
         )}
 
-        {/* Right side: Auth Controls & Actions */}
+        {/* Right side: Active Document, Session Reset & User Profile */}
         <div className="flex items-center space-x-3">
-          {user ? (
-            /* Authenticated User Menu */
-            <>
-              {documentName && (
-                <div className="hidden lg:flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-orange-50 border border-orange-200 text-orange-700 text-xs font-medium">
-                  <Sparkles className="w-3.5 h-3.5 text-orange-500" />
-                  <span className="truncate max-w-[120px] font-semibold">{documentName}</span>
-                </div>
-              )}
+          {documentName && (
+            <div className="hidden lg:flex items-center space-x-2 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs font-mono text-slate-700 max-w-[220px]">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+              <span className="truncate" title={documentName}>{documentName}</span>
+            </div>
+          )}
 
-              {/* User Profile Pill */}
-              <div className="flex items-center space-x-2.5 px-3 py-1 bg-slate-50 border border-slate-200 rounded-xl">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-r from-orange-500 to-pink-600 text-white font-bold text-xs flex items-center justify-center shadow-sm">
-                  {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+          {documentName && onNewSession && (
+            <button
+              onClick={onNewSession}
+              title="Reset current policy session"
+              className="p-1.5 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-100 border border-slate-200 transition-colors"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          {user ? (
+            /* User profile & Sign Out */
+            <div className="flex items-center space-x-2 pl-2 border-l border-slate-200">
+              <div className="text-right hidden sm:block">
+                <div className="text-xs font-bold text-slate-900 truncate max-w-[140px]">
+                  {user.name}
                 </div>
-                <div className="text-left hidden sm:block">
-                  <p className="text-xs font-bold text-slate-800 leading-tight">{user.name}</p>
-                  <p className="text-[10px] text-slate-500">{user.role}</p>
+                <div className="text-[10px] font-mono text-slate-500">
+                  {user.role}
                 </div>
               </div>
-
-              {onNewSession && (
-                <button
-                  onClick={onNewSession}
-                  title="Reset session"
-                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-slate-200 bg-white"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                </button>
-              )}
-
               <button
                 onClick={onSignOut}
-                title="Sign Out"
-                className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-slate-200 bg-white flex items-center space-x-1"
+                title="Sign out of PolicyVision"
+                className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
               >
                 <LogOut className="w-4 h-4" />
-                <span className="text-xs font-semibold hidden md:inline">Sign Out</span>
               </button>
-            </>
+            </div>
           ) : (
-            /* Public Guest Controls */
-            <div className="flex items-center space-x-3">
+            /* Guest Actions */
+            <div className="flex items-center space-x-2">
               <button
                 onClick={onSignInClick}
-                className="text-sm font-semibold text-slate-700 hover:text-orange-600 transition px-3 py-1.5"
+                className="px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-950 transition-colors"
               >
                 Sign In
               </button>
               <button
                 onClick={onRegisterClick}
-                className="px-5 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-pink-600 text-white text-xs sm:text-sm font-bold shadow-md shadow-orange-500/20 hover:opacity-95 transition flex items-center space-x-1"
+                className="btn-primary text-xs py-1.5 px-3.5"
               >
-                <span>Get Started</span>
-                <ChevronRight size={14} />
+                Open Studio
               </button>
             </div>
           )}

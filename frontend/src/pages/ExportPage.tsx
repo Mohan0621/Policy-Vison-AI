@@ -124,7 +124,7 @@ export const ExportPage: React.FC = () => {
           <button
             onClick={handleDownloadZip}
             disabled={isDownloadingZip}
-            className="px-8 py-4 rounded-xl bg-gradient-to-r from-orange-500 to-pink-600 text-white font-bold text-sm tracking-wide shadow-lg shadow-orange-500/25 hover:opacity-95 active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center space-x-2 transition-all flex-shrink-0"
+            className="px-6 py-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs tracking-wider shadow-2xs active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 transition-colors flex-shrink-0"
           >
             {isDownloadingZip ? (
               <>
