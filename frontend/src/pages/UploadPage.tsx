@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UploadCloud, FileText, CheckCircle2, AlertTriangle, ArrowRight, Loader2, Sparkles } from 'lucide-react';
+import { UploadCloud, FileText, CheckCircle2, AlertTriangle, ArrowRight, Loader2, Sparkles, Download, FileCheck } from 'lucide-react';
 import { apiClient, IndianLanguage, VisualStyle } from '../api/client';
 
 interface UploadPageProps {
@@ -54,6 +54,19 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onSuccess }) => {
       return;
     }
     setSelectedFile(file);
+  };
+
+  const loadSamplePolicy = async (filename: string, displayName: string) => {
+    try {
+      setErrorMsg(null);
+      const res = await fetch(`/${filename}`);
+      if (!res.ok) throw new Error('Could not fetch sample file');
+      const blob = await res.blob();
+      const file = new File([blob], filename, { type: 'application/pdf' });
+      setSelectedFile(file);
+    } catch (err: any) {
+      setErrorMsg(`Failed to load ${displayName}: ${err.message}`);
+    }
   };
 
   const handleSubmit = async () => {
@@ -207,38 +220,121 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onSuccess }) => {
 
           {/* Mode 1: PDF Dropzone */}
           {activeMode === 'pdf' ? (
-            <div
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={handleFileDrop}
-              onClick={() => document.getElementById('pdf-file-input')?.click()}
-              className="bg-white rounded-3xl p-10 sm:p-14 text-center cursor-pointer border-2 border-dashed border-slate-300 hover:border-orange-400 hover:bg-orange-50/20 transition-all shadow-sm group relative overflow-hidden"
-            >
-              <input
-                id="pdf-file-input"
-                type="file"
-                accept=".pdf"
-                className="hidden"
-                onChange={(e) => e.target.files && validateAndSetFile(e.target.files[0])}
-              />
-              <div className="w-16 h-16 rounded-2xl bg-orange-50 border border-orange-200 text-orange-600 flex items-center justify-center mx-auto mb-5 group-hover:scale-110 group-hover:border-orange-300 transition-all shadow-sm">
-                <UploadCloud className="w-8 h-8" />
-              </div>
-              <h3 className="font-bold text-lg sm:text-xl text-slate-900 mb-2">
-                {selectedFile ? selectedFile.name : 'Select or Drop Policy PDF'}
-              </h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4">
-                Full PyMuPDF parser + OCR fallback hook • Up to 50 MB / 100 Pages
-              </p>
-              {selectedFile ? (
-                <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold shadow-sm">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>LOADED ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)</span>
+            <div className="space-y-4">
+              <div
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleFileDrop}
+                onClick={() => document.getElementById('pdf-file-input')?.click()}
+                className="bg-white rounded-3xl p-10 sm:p-14 text-center cursor-pointer border-2 border-dashed border-slate-300 hover:border-orange-400 hover:bg-orange-50/20 transition-all shadow-sm group relative overflow-hidden"
+              >
+                <input
+                  id="pdf-file-input"
+                  type="file"
+                  accept=".pdf"
+                  className="hidden"
+                  onChange={(e) => e.target.files && validateAndSetFile(e.target.files[0])}
+                />
+                <div className="w-16 h-16 rounded-2xl bg-orange-50 border border-orange-200 text-orange-600 flex items-center justify-center mx-auto mb-5 group-hover:scale-110 group-hover:border-orange-300 transition-all shadow-sm">
+                  <UploadCloud className="w-8 h-8" />
                 </div>
-              ) : (
-                <span className="text-xs font-semibold text-orange-600 hover:underline">
-                  Click to browse from your device
-                </span>
-              )}
+                <h3 className="font-bold text-lg sm:text-xl text-slate-900 mb-2">
+                  {selectedFile ? selectedFile.name : 'Select or Drop Policy PDF'}
+                </h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4">
+                  Full PyMuPDF parser + OCR fallback hook • Up to 50 MB / 100 Pages
+                </p>
+                {selectedFile ? (
+                  <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold shadow-sm">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>LOADED ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)</span>
+                  </div>
+                ) : (
+                  <span className="text-xs font-semibold text-orange-600 hover:underline">
+                    Click to browse from your device
+                  </span>
+                )}
+              </div>
+
+              {/* Quick Sample Policies Bar */}
+              <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 sm:p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-800 uppercase tracking-wider">
+                    <FileCheck className="w-4 h-4 text-orange-500" />
+                    <span>Quick Testing Samples (IRDAI Compliant)</span>
+                  </div>
+                  <span className="text-[11px] text-slate-500">
+                    No policy on hand? 1-click load or download test documents:
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Sample 1: Care Optima */}
+                  <div className="bg-white border border-slate-200 rounded-xl p-3.5 flex items-center justify-between gap-3 shadow-xs hover:border-orange-200 transition-colors">
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-slate-900 truncate">
+                        Care Optima Health Insurance
+                      </div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">
+                        Individual • ₹15L Sum Insured • PED 36mo • Cashless
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          loadSamplePolicy('Care_Optima_Health_Insurance_Policy.pdf', 'Care Optima Health');
+                        }}
+                        className="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 transition-colors"
+                      >
+                        Load Sample
+                      </button>
+                      <a
+                        href="/Care_Optima_Health_Insurance_Policy.pdf"
+                        download="Care_Optima_Health_Insurance_Policy.pdf"
+                        onClick={(e) => e.stopPropagation()}
+                        title="Download PDF"
+                        className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
+                      >
+                        <Download className="w-4 h-4" />
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Sample 2: Star Comprehensive */}
+                  <div className="bg-white border border-slate-200 rounded-xl p-3.5 flex items-center justify-between gap-3 shadow-xs hover:border-orange-200 transition-colors">
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-slate-900 truncate">
+                        Star Health Comprehensive Floater
+                      </div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">
+                        Family Floater (4 Members) • ₹25L Sum Insured • Restored
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          loadSamplePolicy('Star_Comprehensive_Family_Health_Policy.pdf', 'Star Comprehensive Floater');
+                        }}
+                        className="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 transition-colors"
+                      >
+                        Load Sample
+                      </button>
+                      <a
+                        href="/Star_Comprehensive_Family_Health_Policy.pdf"
+                        download="Star_Comprehensive_Family_Health_Policy.pdf"
+                        onClick={(e) => e.stopPropagation()}
+                        title="Download PDF"
+                        className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
+                      >
+                        <Download className="w-4 h-4" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
             /* Mode 2: Text Editor */
