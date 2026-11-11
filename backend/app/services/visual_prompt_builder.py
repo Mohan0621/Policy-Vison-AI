@@ -13,16 +13,29 @@ from app.models import (
 
 STYLE_PROMPTS = {
     VisualStyle.PROFESSIONAL_INFOGRAPHIC: {
-        "positive": "flat design infographic, clean sans-serif fonts, corporate color palette, data visualization, high contrast, clean vector layout",
-        "negative": "photorealistic, cartoon, hand-drawn, cluttered, messy text, blurry",
+        "positive": (
+            "clean award-winning insurance infographic, modern vector illustration, "
+            "detailed pictorial elements showing modern hospital facade with cross, emergency ambulance, "
+            "protection umbrella shield with family silhouettes, and circular coverage progress gauge meter, "
+            "crisp structured cards, corporate navy and emerald palette, 150 DPI print-ready graphic design, high resolution"
+        ),
+        "negative": "photorealistic photo, 3D render, messy clutter, distorted lines, illegible text, low resolution, watermark",
     },
     VisualStyle.ILLUSTRATED_CARTOON: {
-        "positive": "friendly cartoon style, rounded shapes, bright colors, simple icons, approachable illustration, clear labels",
-        "negative": "photorealistic, technical diagram, gloomy, dark, realistic humans",
+        "positive": (
+            "friendly modern insurance visual explainer, approachable vector illustrations of doctors, "
+            "family protection umbrella, clinic building with cross, rounded cards, vibrant inviting colors, "
+            "clear readable hierarchy, 150 DPI vector layout"
+        ),
+        "negative": "photorealistic, technical diagram, gloomy, dark, realistic humans, messy artifacts",
     },
     VisualStyle.FLOWCHART_DIAGRAM: {
-        "positive": "technical flowchart, boxes and arrows, monochrome accents, precise layout, labeled nodes, clear directional arrows",
-        "negative": "artistic, photorealistic, decorative, chaotic lines, ambiguous paths",
+        "positive": (
+            "technical insurance claims flowchart diagram, sequential process node boxes with rounded corners, "
+            "directional connector arrows with arrowheads, decision split diamond node for cashless vs reimbursement, "
+            "numerical step badges 01 02 03 04, status pills, crisp blueprint white background, clean orthogonal chart layout, high legibility"
+        ),
+        "negative": "artistic decoration, chaotic circular spaghetti lines, disconnected arrows, 3D render, dark background, blurry labels",
     },
 }
 
@@ -63,9 +76,12 @@ class VisualPromptBuilder:
         lang_directive = f" rendered with text in {language} script" if language != "en" else " in English"
 
         prompt_text = (
-            f"Insurance Coverage Infographic: {type_text}. "
-            f"Features distinct sections with coverage amounts: {categories_str}. "
-            f"Includes icons for medical cross, ambulance, and hospital. {pos_style}{lang_directive}."
+            f"Insurance Coverage Infographic and Visual Explainer for '{type_text}'. "
+            f"Key pictorial illustrations: modern hospital architectural facade with emergency medical cross, "
+            f"protective family umbrella shield, and circular coverage progress gauge meter. "
+            f"Structured visual cards highlighting coverage limits: {categories_str}. "
+            f"Crisp icons for inpatient admission, room rent caps, ambulance service, and day-care surgery. "
+            f"{pos_style}{lang_directive}."
         )
 
         overlays = [
@@ -145,9 +161,12 @@ class VisualPromptBuilder:
         lang_directive = f" text labels in {language}" if language != "en" else ""
 
         prompt_text = (
-            f"Claims Process Flowchart diagram showing step-by-step procedure: {steps_joined}."
-            f"{dual_path_directive} Labeled decision boxes, directional sequence arrows, status icons. "
-            f"{pos_style}{lang_directive}."
+            f"Step-by-step Technical Insurance Claims Process Flowchart Diagram: {steps_joined}. "
+            f"{dual_path_directive} Flowchart architecture features sequential rounded process cards, "
+            f"connecting directional arrows with sharp arrowheads, a central Decision Diamond node splitting "
+            f"into Cashless Hospitalization (Path A) vs Reimbursement Claim Filing (Path B), "
+            f"and converging into Final Claim Adjudication & NEFT Settlement with verified shield checkmark. "
+            f"Numbered step badges (01, 02, 03, 04) and status pills. {pos_style}{lang_directive}."
         )
 
         overlays = [

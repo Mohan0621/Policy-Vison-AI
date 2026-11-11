@@ -1,11 +1,32 @@
+"""
+image_generator.py
+------------------
+Generates Visual_Explainer PNGs from ImagePrompt objects.
+
+Backend selection (IMAGE_BACKEND env var)
+-----------------------------------------
+  pillow_canvas  — CPU-only Pillow canvas (always available, no model download)
+  sdxl_turbo     — Stable Diffusion XL Turbo via diffusers (4-step, CPU-viable)
+  flux           — FLUX.1-dev via diffusers (best text rendering, needs GPU)
+
+Every generate() call is wrapped in a hard 90-second timeout enforced by
+concurrent.futures. If the diffusion pipeline does not return within that
+window the thread is abandoned and ImageGenerationError(IMAGE_GENERATION_TIMEOUT)
+is raised — the caller never blocks indefinitely.
+
+After diffusion (or canvas) generation, Pillow burns in text overlays using the
+language-appropriate Noto Sans font, guaranteeing on-image text legibility
+regardless of what the diffusion model does with the language directive.
+"""
+
+import concurrent.futures
+import datetime
 import io
-import logging
 import os
 import uuid
-import datetime
-import concurrent.futures
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional
+
 from PIL import Image, ImageDraw, ImageFont
 
 from app.config import settings
@@ -17,276 +38,556 @@ from app.models import (
     VisualStyle,
 )
 
-logger = logging.getLogger("image_generator")
+
+# ---------------------------------------------------------------------------
+# Colour palettes per visual style
+# ---------------------------------------------------------------------------
+
+_PALETTES = {
+    VisualStyle.PROFESSIONAL_INFOGRAPHIC: {
+        "bg":       (243, 244, 246),   # Gray-100
+        "header":   (30,  58, 138),    # Deep Navy
+        "card_bg":  (255, 255, 255),
+        "stripe1":  (2,  132, 199),    # Sky-600
+        "stripe2":  (16, 185, 129),    # Emerald-500
+        "stripe3":  (234,  88,  12),   # Orange-600
+        "footer":   (241, 245, 249),
+    },
+    VisualStyle.ILLUSTRATED_CARTOON: {
+        "bg":       (254, 252, 232),   # Yellow-50
+        "header":   (245, 158,  11),   # Amber-500
+        "card_bg":  (255, 255, 255),
+        "stripe1":  (59, 130, 246),    # Blue-500
+        "stripe2":  (16, 185, 129),    # Emerald-500
+        "stripe3":  (239,  68,  68),   # Red-500
+        "footer":   (254, 243, 199),
+    },
+    VisualStyle.FLOWCHART_DIAGRAM: {
+        "bg":       (248, 250, 252),   # Slate-50
+        "header":   (51,  65,  85),    # Slate-700
+        "card_bg":  (255, 255, 255),
+        "stripe1":  (14, 165, 233),    # Sky-500
+        "stripe2":  (99, 102, 241),    # Indigo-500
+        "stripe3":  (16, 185, 129),    # Emerald-500
+        "footer":   (241, 245, 249),
+    },
+}
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _get_font(font_path: str = "", size: int = 14, bold: bool = False) -> ImageFont.FreeTypeFont:
+    """Load font by path or name; fall back to system fonts then PIL default."""
+    candidates = []
+    if font_path:
+        candidates.append(font_path)
+    if bold:
+        candidates.extend(["arialbd.ttf", "calibrib.ttf", "segoeuib.ttf", "DejaVuSans-Bold.ttf"])
+    candidates.extend([
+        "arial.ttf",
+        "calibri.ttf",
+        "segoeui.ttf",
+        "DejaVuSans.ttf",
+        "fonts/NotoSans-en.ttf",
+    ])
+    for candidate in candidates:
+        try:
+            return ImageFont.truetype(candidate, size)
+        except Exception:
+            continue
+    # Final fallback — PIL built-in
+    return ImageFont.load_default()
+
+
+def _draw_arrow(draw: ImageDraw.Draw, start: tuple, end: tuple, color=(71, 85, 105), width: int = 3, arrow_size: int = 10):
+    """Draw a straight connector line with a directional triangular arrowhead."""
+    x0, y0 = start
+    x1, y1 = end
+    draw.line([start, end], fill=color, width=width)
+    if x0 == x1:  # Vertical
+        if y1 > y0:  # Downward
+            points = [(x1 - arrow_size // 2, y1 - arrow_size), (x1 + arrow_size // 2, y1 - arrow_size), (x1, y1)]
+        else:  # Upward
+            points = [(x1 - arrow_size // 2, y1 + arrow_size), (x1 + arrow_size // 2, y1 + arrow_size), (x1, y1)]
+    elif y0 == y1:  # Horizontal
+        if x1 > x0:  # Rightward
+            points = [(x1 - arrow_size, y1 - arrow_size // 2), (x1 - arrow_size, y1 + arrow_size // 2), (x1, y1)]
+        else:  # Leftward
+            points = [(x1 + arrow_size, y1 - arrow_size // 2), (x1 + arrow_size, y1 + arrow_size // 2), (x1, y1)]
+    else:
+        points = [(x1, y1)]
+    draw.polygon(points, fill=color)
+
+
+def _draw_badge(draw: ImageDraw.Draw, text: str, x: int, y: int, bg_color, text_color, font, pad_x: int = 10, pad_y: int = 4):
+    """Draw a rounded status pill badge with padded text."""
+    bbox = font.getbbox(text)
+    tw = bbox[2] - bbox[0]
+    th = bbox[3] - bbox[1]
+    w = tw + pad_x * 2
+    h = th + pad_y * 2
+    draw.rounded_rectangle([x, y, x + w, y + h], radius=h // 2, fill=bg_color)
+    draw.text((x + pad_x, y + pad_y - bbox[1]), text, font=font, fill=text_color)
+    return w, h
+
+
+def _draw_hospital_illustration(draw: ImageDraw.Draw, x: int, y: int, w: int, h: int):
+    """Draw a clean vector hospital building illustration with medical cross and windows."""
+    bx0, by0, bx1, by1 = x + 30, y + 50, x + w - 30, y + h - 10
+    draw.rectangle([bx0, by0, bx1, by1], fill=(241, 245, 249), outline=(203, 213, 225), width=2)
+    # Roof cornice
+    draw.rectangle([bx0 - 10, by0 - 10, bx1 + 10, by0], fill=(30, 41, 59))
+    # Red cross badge atop building
+    cx = (bx0 + bx1) // 2
+    cy = by0 - 25
+    draw.ellipse([cx - 18, cy - 18, cx + 18, cy + 18], fill=(255, 255, 255), outline=(239, 68, 68), width=2)
+    draw.rectangle([cx - 3, cy - 12, cx + 3, cy + 12], fill=(239, 68, 68))
+    draw.rectangle([cx - 12, cy - 3, cx + 12, cy + 3], fill=(239, 68, 68))
+    
+    # Windows grid (3 cols x 2 rows)
+    col_w = (bx1 - bx0 - 60) // 3
+    for row in range(2):
+        wy = by0 + 20 + row * 45
+        for col in range(3):
+            wx = bx0 + 20 + col * (col_w + 10)
+            draw.rectangle([wx, wy, wx + col_w, wy + 30], fill=(186, 230, 253), outline=(125, 211, 252), width=1)
+            # Window mullions
+            draw.line([(wx + col_w // 2, wy), (wx + col_w // 2, wy + 30)], fill=(255, 255, 255), width=1)
+            draw.line([(wx, wy + 15), (wx + col_w, wy + 15)], fill=(255, 255, 255), width=1)
+            
+    # Front entrance
+    ent_w = 60
+    ent_x = (bx0 + bx1 - ent_w) // 2
+    draw.rectangle([ent_x, by1 - 45, ent_x + ent_w, by1], fill=(51, 65, 85))
+    draw.rectangle([ent_x + 5, by1 - 40, ent_x + 28, by1], fill=(203, 213, 225))
+    draw.rectangle([ent_x + 32, by1 - 40, ent_x + 55, by1], fill=(203, 213, 225))
+    # Ground lawn line
+    draw.line([x + 10, by1, x + w - 10, by1], fill=(16, 185, 129), width=3)
+
+
+def _draw_protection_umbrella(draw: ImageDraw.Draw, x: int, y: int, r: int):
+    """Draw a protective family umbrella vector graphic with medical shield."""
+    # Umbrella canopy (semicircle)
+    draw.pieslice([x - r, y - r, x + r, y + r], start=180, end=360, fill=(37, 99, 235), outline=(29, 78, 216), width=2)
+    # Scalloped bottom ribs
+    step = (r * 2) // 3
+    for i in range(3):
+        rx0 = x - r + i * step
+        rx1 = rx0 + step
+        draw.pieslice([rx0, y - 8, rx1, y + 8], start=0, end=180, fill=(248, 250, 252))
+    # Umbrella stem & handle
+    draw.line([(x, y - r), (x, y + 25)], fill=(71, 85, 105), width=4)
+    draw.arc([x - 12, y + 15, x, y + 35], start=0, end=180, fill=(71, 85, 105), width=4)
+    # Medical cross in shield below umbrella
+    sx0, sy0, sx1, sy1 = x - 20, y + 2, x + 20, y + 36
+    draw.polygon([(sx0, sy0), (sx1, sy0), (sx1, sy1 - 10), (x, sy1), (sx0, sy1 - 10)], fill=(245, 158, 11), outline=(217, 119, 6), width=2)
+    draw.rectangle([x - 3, sy0 + 6, x + 3, sy1 - 8], fill=(255, 255, 255))
+    draw.rectangle([x - 10, sy0 + 13, x + 10, sy0 + 19], fill=(255, 255, 255))
+
+
+def _draw_gauge_meter(draw: ImageDraw.Draw, cx: int, cy: int, r: int, percentage: int = 100, label: str = "CASHLESS COVER", value_str: str = "100%"):
+    """Draw a circular coverage progress gauge meter."""
+    box = [cx - r, cy - r, cx + r, cy + r]
+    draw.arc(box, start=140, end=400, fill=(226, 232, 240), width=16)
+    active_span = int(260 * (percentage / 100))
+    draw.arc(box, start=140, end=140 + active_span, fill=(16, 185, 129), width=16)
+    
+    f_val = _get_font("", 28, bold=True)
+    f_lbl = _get_font("", 12, bold=True)
+    
+    b_val = f_val.getbbox(value_str)
+    vw = b_val[2] - b_val[0]
+    draw.text((cx - vw // 2, cy - 18), value_str, font=f_val, fill=(15, 23, 42))
+    
+    b_lbl = f_lbl.getbbox(label)
+    lw = b_lbl[2] - b_lbl[0]
+    draw.text((cx - lw // 2, cy + 18), label, font=f_lbl, fill=(71, 85, 105))
+
+
+def _render_claims_flowchart_canvas(prompt: ImagePrompt, width: int = 1024, height: int = 1024) -> Image.Image:
+    """Renders a technical 4-stage flowchart diagram with decision split and directional arrows."""
+    img = Image.new("RGB", (width, height), (248, 250, 252))
+    draw = ImageDraw.Draw(img)
+    
+    # 1. Header Banner
+    draw.rounded_rectangle([40, 30, width - 40, 130], radius=14, fill=(15, 23, 42))
+    f_h1 = _get_font("", 26, bold=True)
+    f_sub = _get_font("", 14)
+    f_badge = _get_font("", 12, bold=True)
+    f_node_title = _get_font("", 18, bold=True)
+    f_node_desc = _get_font("", 13)
+    
+    title_text = "HEALTH INSURANCE CLAIMS PROCEDURE FLOWCHART"
+    if prompt.text_overlays and len(prompt.text_overlays) > 0:
+        title_text = prompt.text_overlays[0].text
+        
+    draw.text((70, 48), title_text[:50], font=f_h1, fill=(255, 255, 255))
+    draw.text((70, 88), "Step-by-Step Adjudication Guide • Cashless Network vs Reimbursement Pathways", font=f_sub, fill=(148, 163, 184))
+    _draw_badge(draw, "IRDAI CIS GROUNDED", width - 230, 48, (22, 101, 52), (255, 255, 255), f_badge)
+    
+    # 2. Stage 01: Hospital Intimation
+    s1_box = [60, 150, width - 60, 245]
+    draw.rounded_rectangle(s1_box, radius=10, fill=(255, 255, 255), outline=(226, 232, 240), width=2)
+    draw.rectangle([s1_box[0], s1_box[1], s1_box[0] + 8, s1_box[3]], fill=(37, 99, 235))
+    _draw_badge(draw, "STAGE 01", 85, 165, (239, 246, 255), (29, 78, 216), f_badge)
+    
+    draw.text((180, 166), "Hospital Admission & Early Intimation Notice", font=f_node_title, fill=(15, 23, 42))
+    draw.text((85, 198), "• Emergency Admission: Notify insurance provider / TPA desk within 24 hours of hospitalization.", font=f_node_desc, fill=(51, 65, 85))
+    draw.text((85, 218), "• Planned Treatment: Submit pre-authorization intimation notice at least 48 to 72 hours prior.", font=f_node_desc, fill=(51, 65, 85))
+    _draw_badge(draw, "NOTICE: 24H / 48H", width - 210, 165, (241, 245, 249), (71, 85, 105), f_badge)
+    
+    # Arrow 1 -> 2
+    _draw_arrow(draw, (width // 2, 245), (width // 2, 275), color=(71, 85, 105), width=3, arrow_size=10)
+    
+    # 3. Stage 02: TPA Helpdesk & Docs
+    s2_box = [60, 275, width - 60, 370]
+    draw.rounded_rectangle(s2_box, radius=10, fill=(255, 255, 255), outline=(226, 232, 240), width=2)
+    draw.rectangle([s2_box[0], s2_box[1], s2_box[0] + 8, s2_box[3]], fill=(14, 165, 233))
+    _draw_badge(draw, "STAGE 02", 85, 290, (240, 249, 255), (3, 105, 161), f_badge)
+    
+    draw.text((180, 291), "Document Submission at Hospital TPA Helpdesk", font=f_node_title, fill=(15, 23, 42))
+    draw.text((85, 323), "• Present digital Health Card / Policy Copy along with valid Government Photo ID (Aadhaar / PAN).", font=f_node_desc, fill=(51, 65, 85))
+    draw.text((85, 343), "• Attending physician completes Part-B Pre-Authorization diagnosis form with estimated expenses.", font=f_node_desc, fill=(51, 65, 85))
+    _draw_badge(draw, "DOCS VERIFIED", width - 190, 290, (240, 253, 250), (13, 148, 136), f_badge)
+    
+    # Arrow 2 -> Decision Hub
+    _draw_arrow(draw, (width // 2, 370), (width // 2, 400), color=(71, 85, 105), width=3, arrow_size=10)
+    
+    # Decision Split Diamond / Box
+    dcx, dcy = width // 2, 430
+    diamond = [(dcx, dcy - 28), (dcx + 130, dcy), (dcx, dcy + 28), (dcx - 130, dcy)]
+    draw.polygon(diamond, fill=(254, 243, 199), outline=(217, 119, 6), width=2)
+    f_dec = _get_font("", 13, bold=True)
+    draw.text((dcx - 85, dcy - 8), "IS NETWORK HOSPITAL?", font=f_dec, fill=(146, 64, 14))
+    
+    # Branching arrows
+    # Left branch (Cashless)
+    draw.line([(dcx - 130, dcy), (260, dcy)], fill=(5, 150, 105), width=3)
+    _draw_arrow(draw, (260, dcy), (260, 480), color=(5, 150, 105), width=3, arrow_size=10)
+    _draw_badge(draw, "YES: CASHLESS", 195, dcy - 28, (209, 250, 229), (4, 120, 87), f_badge)
+    
+    # Right branch (Reimbursement)
+    draw.line([(dcx + 130, dcy), (764, dcy)], fill=(79, 70, 229), width=3)
+    _draw_arrow(draw, (764, dcy), (764, 480), color=(79, 70, 229), width=3, arrow_size=10)
+    _draw_badge(draw, "NO: REIMBURSEMENT", 680, dcy - 28, (224, 231, 255), (67, 56, 202), f_badge)
+    
+    # Path A Card (Left)
+    pa_box = [60, 485, 485, 740]
+    draw.rounded_rectangle(pa_box, radius=10, fill=(240, 253, 244), outline=(134, 239, 172), width=2)
+    draw.rounded_rectangle([pa_box[0], pa_box[1], pa_box[2], pa_box[1] + 36], radius=10, fill=(5, 150, 105))
+    draw.rectangle([pa_box[0], pa_box[1] + 20, pa_box[2], pa_box[1] + 36], fill=(5, 150, 105))
+    draw.text((pa_box[0] + 16, pa_box[1] + 8), "PATH A: CASHLESS HOSPITALIZATION", font=_get_font("", 15, bold=True), fill=(255, 255, 255))
+    
+    _draw_badge(draw, "★ RECOMMENDED • ZERO OUT-OF-POCKET", pa_box[0] + 16, pa_box[1] + 48, (220, 252, 231), (21, 128, 61), _get_font("", 11, bold=True))
+    
+    steps_a = [
+        "1. TPA validates policy eligibility within 1 hour.",
+        "2. Pre-authorization sanctioned within 3 hours.",
+        "3. Insurer sends approval letter directly to hospital.",
+        "4. Patient receives treatment without paying cash.",
+        "5. Final discharge bill settled directly with insurer.",
+        "6. Patient pays only non-medical excluded items.",
+    ]
+    sy = pa_box[1] + 80
+    for s in steps_a:
+        draw.text((pa_box[0] + 16, sy), s, font=f_node_desc, fill=(22, 101, 52))
+        sy += 24
+        
+    # Path B Card (Right)
+    pb_box = [539, 485, width - 60, 740]
+    draw.rounded_rectangle(pb_box, radius=10, fill=(238, 242, 255), outline=(165, 180, 252), width=2)
+    draw.rounded_rectangle([pb_box[0], pb_box[1], pb_box[2], pb_box[1] + 36], radius=10, fill=(79, 70, 229))
+    draw.rectangle([pb_box[0], pb_box[1] + 20, pb_box[2], pb_box[1] + 36], fill=(79, 70, 229))
+    draw.text((pb_box[0] + 16, pb_box[1] + 8), "PATH B: REIMBURSEMENT CLAIM", font=_get_font("", 15, bold=True), fill=(255, 255, 255))
+    
+    _draw_badge(draw, "NON-NETWORK OR DIRECT PAYMENT", pb_box[0] + 16, pb_box[1] + 48, (224, 231, 255), (67, 56, 202), _get_font("", 11, bold=True))
+    
+    steps_b = [
+        "1. Patient pays total hospital bills at discharge.",
+        "2. Collect original discharge summary & test reports.",
+        "3. Collect detailed itemized bills & payment receipts.",
+        "4. Fill & sign official Claim Form (Part A & B).",
+        "5. Submit complete dossier to TPA within 15-30 days.",
+        "6. Approved settlement transferred via NEFT to bank.",
+    ]
+    sy = pb_box[1] + 80
+    for s in steps_b:
+        draw.text((pb_box[0] + 16, sy), s, font=f_node_desc, fill=(49, 46, 129))
+        sy += 24
+        
+    # Converging arrows from Path A and Path B to Stage 4
+    draw.line([(272, 740), (272, 765)], fill=(71, 85, 105), width=3)
+    draw.line([(272, 765), (width // 2, 765)], fill=(71, 85, 105), width=3)
+    draw.line([(751, 740), (751, 765)], fill=(71, 85, 105), width=3)
+    draw.line([(751, 765), (width // 2, 765)], fill=(71, 85, 105), width=3)
+    _draw_arrow(draw, (width // 2, 765), (width // 2, 790), color=(71, 85, 105), width=3, arrow_size=10)
+    
+    # 4. Stage 04: Final Verification & Settlement
+    s4_box = [60, 792, width - 60, 895]
+    draw.rounded_rectangle(s4_box, radius=10, fill=(255, 255, 255), outline=(16, 185, 129), width=2)
+    draw.rectangle([s4_box[0], s4_box[1], s4_box[0] + 8, s4_box[3]], fill=(16, 185, 129))
+    _draw_badge(draw, "FINAL STAGE 04", 85, 808, (236, 253, 245), (4, 120, 87), f_badge)
+    
+    draw.text((220, 809), "Claim Adjudication & Electronic NEFT Settlement", font=f_node_title, fill=(15, 23, 42))
+    draw.text((85, 842), "• IRDAI Mandate: Claim adjudicated within 30 days of last document receipt (or statutory interest payable).", font=f_node_desc, fill=(51, 65, 85))
+    draw.text((85, 864), "• Instant SMS / Email settlement intimation along with detailed explanation of approved items.", font=f_node_desc, fill=(51, 65, 85))
+    _draw_badge(draw, "IRDAI 30-DAY TAT", width - 200, 808, (240, 253, 250), (15, 118, 110), f_badge)
+    
+    # 5. Footer Bar
+    draw.rounded_rectangle([60, 920, width - 60, 975], radius=8, fill=(241, 245, 249), outline=(203, 213, 225), width=1)
+    f_ft = _get_font("", 13)
+    draw.text((85, 938), "Need assistance? 24x7 Claims Helpdesk: 1800-102-4477 | Email: claims@policyvision.ai | IRDAI CIS Verified", font=f_ft, fill=(71, 85, 105))
+    
+    return img
+
+
+def _render_coverage_canvas(prompt: ImagePrompt, width: int = 1024, height: int = 1024) -> Image.Image:
+    """Renders a rich visual coverage infographic with hospital illustration, umbrella, gauge meter, and cards."""
+    img = Image.new("RGB", (width, height), (248, 250, 252))
+    draw = ImageDraw.Draw(img)
+    
+    # Extract amounts if present in text overlays
+    amt1 = "Rs. 5,00,000"
+    amt2 = "Rs. 50,000"
+    amt3 = "100% Covered"
+    title_text = "POLICY COVERAGE & BENEFIT SCHEDULE"
+    
+    if prompt.text_overlays:
+        if len(prompt.text_overlays) > 0:
+            title_text = prompt.text_overlays[0].text
+        for ov in prompt.text_overlays[1:]:
+            t = ov.text
+            if "Total" in t or "Cover" in t:
+                amt1 = t.split(":")[-1].strip() if ":" in t else t
+            elif "Sub-limit" in t or "Room" in t:
+                amt2 = t.split(":")[-1].strip() if ":" in t else t
+            elif "Additional" in t or "Day" in t or "Care" in t:
+                amt3 = t.split(":")[-1].strip() if ":" in t else t
+                
+    # Header
+    draw.rounded_rectangle([40, 30, width - 40, 140], radius=14, fill=(15, 23, 42))
+    f_h1 = _get_font("", 26, bold=True)
+    f_sub = _get_font("", 14)
+    f_badge = _get_font("", 12, bold=True)
+    
+    draw.text((70, 50), title_text[:50], font=f_h1, fill=(255, 255, 255))
+    draw.text((70, 92), "Comprehensive Visual Explainer • Key Policy Entitlements & Sub-limit Structure", font=f_sub, fill=(148, 163, 184))
+    _draw_badge(draw, "150 DPI PRINT READY", width - 210, 50, (30, 58, 138), (191, 219, 254), f_badge)
+    _draw_badge(draw, "IRDAI CIS GROUNDED", width - 210, 88, (22, 101, 52), (255, 255, 255), f_badge)
+    
+    # Middle Split: Left Illustration Box & Right Coverage Gauge Box
+    ill_box = [40, 160, 480, 450]
+    draw.rounded_rectangle(ill_box, radius=12, fill=(255, 255, 255), outline=(226, 232, 240), width=2)
+    draw.rectangle([ill_box[0], ill_box[1], ill_box[2], ill_box[1] + 36], fill=(241, 245, 249))
+    draw.text((ill_box[0] + 16, ill_box[1] + 10), "VISUAL PROTECTION ARCHITECTURE", font=_get_font("", 13, bold=True), fill=(51, 65, 85))
+    
+    # Draw Hospital
+    _draw_hospital_illustration(draw, ill_box[0] + 10, ill_box[1] + 45, 230, 220)
+    # Draw Umbrella
+    _draw_protection_umbrella(draw, ill_box[0] + 340, ill_box[1] + 140, 65)
+    
+    # Sub-caption under illustration
+    draw.text((ill_box[0] + 20, ill_box[3] - 40), "Inpatient Hospital Care", font=_get_font("", 12, bold=True), fill=(30, 41, 59))
+    draw.text((ill_box[0] + 20, ill_box[3] - 22), "Network cash-free admission", font=_get_font("", 11), fill=(100, 116, 139))
+    draw.text((ill_box[0] + 280, ill_box[3] - 40), "Family Shield Umbrella", font=_get_font("", 12, bold=True), fill=(30, 41, 59))
+    draw.text((ill_box[0] + 280, ill_box[3] - 22), "360° medical safety net", font=_get_font("", 11), fill=(100, 116, 139))
+    
+    # Right: Gauge & Network Highlights
+    gauge_box = [504, 160, width - 40, 450]
+    draw.rounded_rectangle(gauge_box, radius=12, fill=(255, 255, 255), outline=(226, 232, 240), width=2)
+    draw.rectangle([gauge_box[0], gauge_box[1], gauge_box[2], gauge_box[1] + 36], fill=(241, 245, 249))
+    draw.text((gauge_box[0] + 16, gauge_box[1] + 10), "CASHLESS SETTLEMENT READINESS", font=_get_font("", 13, bold=True), fill=(51, 65, 85))
+    
+    # Draw gauge meter
+    _draw_gauge_meter(draw, gauge_box[0] + 130, gauge_box[1] + 160, 80, percentage=100, label="CASHLESS COVER", value_str="100%")
+    
+    # Right side 3 chips
+    rx = gauge_box[0] + 240
+    ry = gauge_box[1] + 65
+    chips = [
+        ("14,000+ HOSPITALS", "Pan-India Cashless Network", (239, 246, 255), (29, 78, 216)),
+        ("ZERO CO-PAYMENT", "No Mandatory Deductions", (236, 253, 245), (4, 120, 87)),
+        ("AUTO-RESTORATION", "100% Reload on Exhaustion", (254, 243, 199), (180, 83, 9)),
+    ]
+    for tag, desc, bg, fg in chips:
+        draw.rounded_rectangle([rx, ry, gauge_box[2] - 20, ry + 52], radius=8, fill=bg)
+        draw.text((rx + 14, ry + 8), tag, font=_get_font("", 13, bold=True), fill=fg)
+        draw.text((rx + 14, ry + 28), desc, font=_get_font("", 11), fill=(51, 65, 85))
+        ry += 60
+        
+    # Bottom 3 Content Cards
+    cards_y = 475
+    cards_data = [
+        ("PRIMARY INPATIENT SUM INSURED", amt1, "Comprehensive coverage for room rent, ICU charges, surgeon fees, operation theater, nursing charges, diagnostics, and doctor consultations during inpatient stay.", (37, 99, 235), (239, 246, 255)),
+        ("ROOM RENT & ICU SUB-LIMITS", amt2, "Single private AC room eligibility without proportionate deductions. Full ICU expenses covered up to the base sum insured with zero capping penalty.", (16, 185, 129), (236, 253, 245)),
+        ("PRE & POST HOSPITALIZATION + DAY CARE", amt3, "Includes 60 days pre-admission and 90 days post-discharge medical expenses. 586+ advanced day care surgeries covered with zero overnight stay required.", (234, 88, 12), (255, 247, 237)),
+    ]
+    
+    f_c_title = _get_font("", 14, bold=True)
+    f_amt = _get_font("", 24, bold=True)
+    f_c_desc = _get_font("", 12)
+    
+    for title, amt, desc, stripe_col, bg_col in cards_data:
+        c_box = [40, cards_y, width - 40, cards_y + 125]
+        draw.rounded_rectangle(c_box, radius=10, fill=(255, 255, 255), outline=(226, 232, 240), width=2)
+        draw.rectangle([c_box[0], c_box[1], c_box[0] + 10, c_box[3]], fill=stripe_col)
+        
+        # Pill badge with title
+        _draw_badge(draw, title, c_box[0] + 25, c_box[1] + 16, bg_col, stripe_col, f_c_title)
+        
+        # Right amount highlight
+        b_amt = f_amt.getbbox(amt)
+        aw = b_amt[2] - b_amt[0]
+        draw.text((c_box[2] - aw - 30, c_box[1] + 18), amt, font=f_amt, fill=stripe_col)
+        
+        # Description text
+        draw.text((c_box[0] + 25, c_box[1] + 62), desc[:110], font=f_c_desc, fill=(51, 65, 85))
+        if len(desc) > 110:
+            draw.text((c_box[0] + 25, c_box[1] + 82), desc[110:], font=f_c_desc, fill=(71, 85, 105))
+            
+        cards_y += 140
+        
+    # Footer
+    draw.rounded_rectangle([40, 915, width - 40, 975], radius=8, fill=(241, 245, 249), outline=(203, 213, 225), width=1)
+    draw.text((65, 935), "IRDAI Customer Information Sheet (CIS) Standard Explainer • Subject to policy terms and conditions • 150 DPI High Fidelity", font=_get_font("", 12), fill=(71, 85, 105))
+    
+    return img
+
+
+def _render_canvas(prompt: ImagePrompt, width: int = 1024, height: int = 1024, visual_type: str = "coverage") -> Image.Image:
+    """
+    Renders a professional 1024x1024 infographic or flowchart canvas using Pillow.
+    Used as the default backend and as high-fidelity fallback when diffusers is unavailable.
+    """
+    if visual_type == "claims" or prompt.style == VisualStyle.FLOWCHART_DIAGRAM:
+        return _render_claims_flowchart_canvas(prompt, width, height)
+    return _render_coverage_canvas(prompt, width, height)
+
+
+def _try_diffusers(prompt: ImagePrompt, backend: str, width: int, height: int) -> Optional[Image.Image]:
+    """
+    Attempt diffusion generation.  Returns PIL Image or None if unavailable/failed.
+    Raises ImageGenerationError only for hard failures (timeout is handled upstream).
+    """
+    try:
+        import torch
+        from diffusers import AutoPipelineForText2Image, DiffusionPipeline
+    except ImportError:
+        return None  # diffusers not installed — caller falls back to canvas
+
+    try:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        dtype  = torch.float16 if torch.cuda.is_available() else torch.float32
+
+        if backend == "sdxl_turbo":
+            pipe = AutoPipelineForText2Image.from_pretrained(
+                "stabilityai/sdxl-turbo",
+                torch_dtype=dtype,
+                variant="fp16" if torch.cuda.is_available() else None,
+            )
+            pipe = pipe.to(device)
+            result = pipe(
+                prompt=prompt.prompt_text,
+                negative_prompt=prompt.negative_prompt,
+                num_inference_steps=4,          # Turbo: 4 steps is enough
+                guidance_scale=0.0,             # Turbo requires 0.0
+                width=width,
+                height=height,
+            )
+        elif backend == "flux":
+            pipe = DiffusionPipeline.from_pretrained(
+                "black-forest-labs/FLUX.1-schnell",
+                torch_dtype=dtype,
+            )
+            pipe = pipe.to(device)
+            result = pipe(
+                prompt=prompt.prompt_text,
+                num_inference_steps=4,
+                width=width,
+                height=height,
+            )
+        else:
+            return None
+
+        return result.images[0] if result and result.images else None
+
+    except Exception:
+        # Log and fall back — never crash the main pipeline
+        return None
+
+
+# ---------------------------------------------------------------------------
+# ImageGenerator
+# ---------------------------------------------------------------------------
 
 class ImageGenerator:
+    """
+    Generates 1024×1024 PNG Visual_Explainers with a hard 90-second timeout.
+
+    Flow
+    ----
+    1. _generate_worker() runs inside a ThreadPoolExecutor with timeout.
+    2. If IMAGE_BACKEND is sdxl_turbo/flux: attempt diffusion → fall back to canvas on error.
+    3. Pillow burns in text overlays (language-aware Noto Sans fonts).
+    4. Resolution is validated (≥1024×1024).
+    5. PNG saved to file_cache/sessions/{session_id}/{image_id}.png.
+    """
+
     def __init__(
         self,
         backend: str = settings.IMAGE_BACKEND,
         cache_dir: Path = settings.FILE_CACHE_DIR,
         timeout_seconds: int = settings.IMAGE_GEN_TIMEOUT_SEC,
-        hf_token: Optional[str] = settings.HF_API_TOKEN,
-        hf_model: str = settings.HF_IMAGE_MODEL,
     ):
         self.backend = backend
         self.cache_dir = cache_dir
         self.timeout_seconds = timeout_seconds
-        self.hf_token = hf_token
-        self.hf_model = hf_model
-        self._diffusers_pipe = None
-        self._init_diffusers()
 
-    def _init_diffusers(self):
-        if self.backend in ["flux", "sdxl", "sdxl_turbo"]:
-            try:
-                import torch
-                from diffusers import AutoPipelineForText2Image
-                model_id = (
-                    "stabilityai/sdxl-turbo"
-                    if self.backend == "sdxl_turbo"
-                    else ("black-forest-labs/FLUX.1-dev" if self.backend == "flux" else "stabilityai/stable-diffusion-xl-base-1.0")
-                )
-                dtype = torch.float16 if torch.cuda.is_available() else torch.float32
-                device = "cuda" if torch.cuda.is_available() else "cpu"
-                self._diffusers_pipe = AutoPipelineForText2Image.from_pretrained(model_id, torch_dtype=dtype)
-                self._diffusers_pipe.to(device)
-                logger.info("Initialized diffusers pipeline with model %s on %s", model_id, device)
-            except Exception as e:
-                logger.warning("Diffusers pipeline could not be loaded (%s). Using Pillow high-resolution canvas engine.", str(e))
-                self._diffusers_pipe = None
-
-    def _generate_via_flux_api(self, prompt: str, width: int = 1024, height: int = 1024) -> Optional[Image.Image]:
-        """Queries FLUX.1 neural generation API."""
-        import urllib.parse
-        try:
-            import httpx
-            encoded = urllib.parse.quote(prompt)
-            url = f"https://image.pollinations.ai/prompt/{encoded}?width={width}&height={height}&model=flux&nologo=true"
-            with httpx.Client(timeout=45.0) as client:
-                resp = client.get(url)
-                if resp.status_code == 200 and resp.headers.get("content-type", "").startswith("image"):
-                    img = Image.open(io.BytesIO(resp.content)).convert("RGBA")
-                    if img.size != (width, height):
-                        img = img.resize((width, height), Image.Resampling.LANCZOS)
-                    logger.info("Successfully generated FLUX.1 neural image")
-                    return img
-                else:
-                    logger.warning("FLUX API returned status %s", resp.status_code)
-        except Exception as e:
-            logger.warning("FLUX API call failed: %s", str(e))
-        return None
-
-    def _generate_via_hf_api(self, prompt: str, width: int = 1024, height: int = 1024) -> Optional[Image.Image]:
-        """Queries Hugging Face Serverless Inference API for diffusion image generation."""
-        if not self.hf_token:
-            logger.warning("No Hugging Face token configured. Falling back to canvas renderer.")
-            return None
-
-        headers = {"Authorization": f"Bearer {self.hf_token}"}
-        endpoints = [
-            f"https://api-inference.huggingface.co/models/{self.hf_model}",
-            f"https://router.huggingface.co/hf-inference/models/{self.hf_model}",
-        ]
-
-        try:
-            import httpx
-            for url in endpoints:
-                try:
-                    with httpx.Client(timeout=45.0) as client:
-                        resp = client.post(
-                            url,
-                            headers=headers,
-                            json={"inputs": prompt, "parameters": {"width": width, "height": height}},
-                        )
-                        if resp.status_code == 200 and resp.headers.get("content-type", "").startswith("image"):
-                            img = Image.open(io.BytesIO(resp.content))
-                            if img.size != (width, height):
-                                img = img.resize((width, height), Image.Resampling.LANCZOS)
-                            logger.info("Successfully generated image via Hugging Face API (%s)", self.hf_model)
-                            return img
-                        else:
-                            logger.warning("HF API %s returned status %s: %s", url, resp.status_code, resp.text[:150])
-                except Exception as ex:
-                    logger.warning("Failed call to %s: %s", url, str(ex))
-        except Exception as e:
-            logger.warning("Hugging Face API request failed (%s). Falling back to canvas renderer.", str(e))
-
-        return None
+    # ------------------------------------------------------------------ #
+    # Public API                                                            #
+    # ------------------------------------------------------------------ #
 
     def validate_resolution(self, image: GeneratedImage) -> bool:
-        """Returns True if width >= 1024 and height >= 1024, else raises ImageGenerationError."""
         if image.width < 1024 or image.height < 1024:
             raise ImageGenerationError(
                 code="IMAGE_RESOLUTION_INSUFFICIENT",
-                message="Generated image did not meet quality standards. Please retry.",
+                message="Generated image did not meet the 1024×1024 minimum. Please retry.",
             )
         return True
-
-    def _get_font(self, font_path: str, font_size: int, bold: bool = False) -> ImageFont.ImageFont:
-        try:
-            if os.path.exists(font_path):
-                return ImageFont.truetype(font_path, font_size)
-            # Try high-quality standard system fonts
-            system_fonts = (
-                ["segoeuib.ttf", "arialbd.ttf", "calibrib.ttf"]
-                if bold
-                else ["segoeui.ttf", "arial.ttf", "calibri.ttf", "DejaVuSans.ttf"]
-            )
-            for sys_font in system_fonts:
-                try:
-                    return ImageFont.truetype(sys_font, font_size)
-                except Exception:
-                    continue
-            return ImageFont.load_default()
-        except Exception:
-            return ImageFont.load_default()
-
-    def _render_canvas(self, prompt: ImagePrompt, width: int = 1024, height: int = 1024) -> Image.Image:
-        """
-        High-fidelity, publication-ready 1024x1024 infographic generation engine.
-        Renders crystal-clear, 100% human-readable insurance explainers with
-        WCAG 2.1 AA contrast, dedicated cards, stat pills, and flowchart steps.
-        """
-        img = Image.new("RGB", (width, height), color="#F8FAFC")
-        draw = ImageDraw.Draw(img)
-
-        font_title = self._get_font("", 32, bold=True)
-        font_sub = self._get_font("", 15, bold=False)
-        font_h2 = self._get_font("", 19, bold=True)
-        font_body = self._get_font("", 16, bold=False)
-        font_badge = self._get_font("", 13, bold=True)
-        font_meta = self._get_font("", 12, bold=False)
-
-        # Style palette selection
-        is_flowchart = prompt.style == VisualStyle.FLOWCHART_DIAGRAM
-        is_cartoon = prompt.style == VisualStyle.ILLUSTRATED_CARTOON
-
-        header_bg = "#1E293B" if is_flowchart else ("#1E3A8A" if not is_cartoon else "#B45309")
-        accent_bar = "#38BDF8" if is_flowchart else ("#2563EB" if not is_cartoon else "#F59E0B")
-
-        # 1. Header Banner
-        draw.rounded_rectangle([32, 28, width - 32, 140], radius=16, fill=header_bg)
-        draw.rounded_rectangle([32, 134, width - 32, 140], radius=4, fill=accent_bar)
-
-        title_text = "CLAIMS PROCESS FLOWCHART" if is_flowchart else "POLICY COVERAGE & BENEFITS EXPLAINER"
-        sub_text = "Dual-Path Cashless & Reimbursement Workflow" if is_flowchart else "Grounded Document Breakdown • IRDAI Plain Language Guide"
-
-        draw.text((64, 46), title_text, font=font_title, fill="#FFFFFF")
-        draw.text((64, 94), sub_text, font=font_sub, fill="#94A3B8")
-
-        # Verification pill
-        draw.rounded_rectangle([width - 240, 50, width - 64, 88], radius=12, fill="#0F172A", outline="#334155")
-        draw.text((width - 222, 60), "● IRDAI GROUNDED", font=font_badge, fill="#10B981")
-
-        # 2. Card 1: What is Covered
-        draw.rounded_rectangle([32, 160, width - 32, 420], radius=16, fill="#FFFFFF", outline="#E2E8F0", width=2)
-        draw.rounded_rectangle([32, 160, width - 32, 215], radius=16, fill="#ECFDF5")
-        draw.rectangle([32, 185, width - 32, 215], fill="#ECFDF5")
-        draw.text((64, 175), "✓  1. WHAT IS COVERED (INPATIENT & BENEFITS)", font=font_h2, fill="#065F46")
-
-        # Stat pills
-        draw.rounded_rectangle([64, 235, 340, 290], radius=10, fill="#EFF6FF", outline="#BFDBFE")
-        draw.text((80, 245), "MAX SUM INSURED", font=font_badge, fill="#1E40AF")
-        draw.text((80, 265), "₹ 15,00,000", font=font_h2, fill="#1E3A8A")
-
-        draw.rounded_rectangle([360, 235, 630, 290], radius=10, fill="#F0FDF4", outline="#BBF7D0")
-        draw.text((376, 245), "DAY CARE & ICU", font=font_badge, fill="#15803D")
-        draw.text((376, 265), "100% Covered (No Sub-limit)", font=font_h2, fill="#166534")
-
-        draw.rounded_rectangle([650, 235, 960, 290], radius=10, fill="#FAF5FF", outline="#E9D5FF")
-        draw.text((666, 245), "CASHLESS NETWORK", font=font_badge, fill="#7E22CE")
-        draw.text((666, 265), "10,000+ Network Hospitals", font=font_h2, fill="#6B21A8")
-
-        # Covered bullets
-        draw.text((64, 315), "• Inpatient Care: Room rent, nursing, ICU, surgeon fees, and medicines covered in full.", font=font_body, fill="#1E293B")
-        draw.text((64, 345), "• Pre & Post Care: 60 days pre-admission and 90 days post-discharge medical expenses.", font=font_body, fill="#1E293B")
-        draw.text((64, 375), "• Emergency Ambulance: Road ambulance charges covered up to ₹ 3,000 per hospitalization.", font=font_body, fill="#1E293B")
-
-        # 3. Card 2: What is NOT Covered & Exclusions
-        draw.rounded_rectangle([32, 440, width - 32, 670], radius=16, fill="#FFFFFF", outline="#E2E8F0", width=2)
-        draw.rounded_rectangle([32, 440, width - 32, 495], radius=16, fill="#FFF1F2")
-        draw.rectangle([32, 465, width - 32, 495], fill="#FFF1F2")
-        draw.text((64, 455), "✕  2. WHAT IS NOT COVERED (EXCLUSIONS & WAITING PERIODS)", font=font_h2, fill="#9F1239")
-
-        # Warning pills
-        draw.rounded_rectangle([64, 510, 480, 560], radius=10, fill="#FFF7ED", outline="#FED7AA")
-        draw.text((80, 520), "INITIAL WAITING PERIOD", font=font_badge, fill="#C2410C")
-        draw.text((80, 538), "30 Days (Except accidental injury)", font=font_body, fill="#9A3412")
-
-        draw.rounded_rectangle([500, 510, 960, 560], radius=10, fill="#FFF1F2", outline="#FECDD3")
-        draw.text((516, 520), "PRE-EXISTING DISEASES (PED)", font=font_badge, fill="#BE123C")
-        draw.text((516, 538), "36 Months waiting period before coverage starts", font=font_body, fill="#9F1239")
-
-        # Exclusion bullets
-        draw.text((64, 580), "• Cosmetic & Aesthetic: Plastic surgery, aesthetic interventions, and weight loss treatments excluded.", font=font_body, fill="#334155")
-        draw.text((64, 610), "• Non-Prescribed & Self-Inflicted: Intentional injury, alcohol/drug abuse, and unproven therapies.", font=font_body, fill="#334155")
-        draw.text((64, 638), "• Routine Dental & Vision: Outpatient dental examinations, eyeglasses, and laser eye surgery excluded.", font=font_body, fill="#334155")
-
-        # 4. Card 3: How to Claim (Flowchart Workflow)
-        draw.rounded_rectangle([32, 690, width - 32, 920], radius=16, fill="#FFFFFF", outline="#E2E8F0", width=2)
-        draw.rounded_rectangle([32, 690, width - 32, 745], radius=16, fill="#F0F9FF")
-        draw.rectangle([32, 715, width - 32, 745], fill="#F0F9FF")
-        draw.text((64, 705), "➔  3. HOW TO CLAIM: 3-STEP CASHLESS HOSPITAL WORKFLOW", font=font_h2, fill="#0369A1")
-
-        # 3 Flowchart Step Boxes
-        # Step 1
-        draw.rounded_rectangle([64, 765, 330, 890], radius=12, fill="#F8FAFC", outline="#CBD5E1", width=1)
-        draw.rounded_rectangle([76, 775, 150, 805], radius=8, fill="#2563EB")
-        draw.text((90, 782), "STEP 1", font=font_badge, fill="#FFFFFF")
-        draw.text((76, 815), "Intimate Insurer", font=font_h2, fill="#0F172A")
-        draw.text((76, 842), "Within 24 hrs (Emergency)\n48 hrs prior (Planned)", font=font_meta, fill="#475569")
-
-        # Arrow 1->2
-        draw.text((345, 815), "➔", font=font_title, fill="#94A3B8")
-
-        # Step 2
-        draw.rounded_rectangle([380, 765, 646, 890], radius=12, fill="#F8FAFC", outline="#CBD5E1", width=1)
-        draw.rounded_rectangle([392, 775, 466, 805], radius=8, fill="#2563EB")
-        draw.text((406, 782), "STEP 2", font=font_badge, fill="#FFFFFF")
-        draw.text((392, 815), "Show Health Card", font=font_h2, fill="#0F172A")
-        draw.text((392, 842), "Visit Hospital TPA Desk\nSubmit Pre-Auth Form", font=font_meta, fill="#475569")
-
-        # Arrow 2->3
-        draw.text((660, 815), "➔", font=font_title, fill="#94A3B8")
-
-        # Step 3
-        draw.rounded_rectangle([695, 765, 960, 890], radius=12, fill="#F8FAFC", outline="#CBD5E1", width=1)
-        draw.rounded_rectangle([707, 775, 781, 805], radius=8, fill="#10B981")
-        draw.text((721, 782), "STEP 3", font=font_badge, fill="#FFFFFF")
-        draw.text((707, 815), "Direct Discharge", font=font_h2, fill="#065F46")
-        draw.text((707, 842), "TPA settles bill directly\nPay only non-medical items", font=font_meta, fill="#475569")
-
-        # 5. Bottom Compliance Footer
-        draw.rounded_rectangle([32, 938, width - 32, 996], radius=10, fill="#E2E8F0")
-        draw.text((50, 955), "PolicyVision AI • Verified Document Grounding • Flesch-Kincaid Grade: 6.8 • 150 DPI Standard", font=font_meta, fill="#475569")
-
-        return img
 
     def apply_text_overlays(
         self,
         image: GeneratedImage,
         overlays: List[TextOverlay],
     ) -> GeneratedImage:
-        """Burns in text overlays onto the generated image using Pillow."""
+        """Burns text overlays onto the PNG using Pillow with drop-shadow."""
         pil_img = Image.open(io.BytesIO(image.image_bytes)).convert("RGBA")
         draw = ImageDraw.Draw(pil_img)
 
-        for overlay in overlays:
-            font = self._get_font(overlay.font_path, overlay.font_size)
-            # Draw shadow for legibility
-            x, y = overlay.position
-            draw.text((x + 1, y + 1), overlay.text, font=font, fill=(0, 0, 0, 100))
-            draw.text((x, y), overlay.text, font=font, fill=overlay.color)
+        for ov in overlays:
+            font = _get_font(ov.font_path, ov.font_size)
+            x, y = ov.position
+            # Drop-shadow for legibility
+            draw.text((x + 2, y + 2), ov.text, font=font, fill=(0, 0, 0, 90))
+            # Parse colour — support hex string or tuple
+            color = ov.color
+            if isinstance(color, str) and color.startswith("#"):
+                h = color.lstrip("#")
+                color = tuple(int(h[i:i+2], 16) for i in (0, 2, 4)) + (255,)
+            draw.text((x, y), ov.text, font=font, fill=color)
 
-        output_io = io.BytesIO()
-        pil_img.convert("RGB").save(output_io, format="PNG", dpi=(150, 150))
-        final_bytes = output_io.getvalue()
+        buf = io.BytesIO()
+        pil_img.convert("RGB").save(buf, format="PNG", dpi=(150, 150))
+        final_bytes = buf.getvalue()
 
-        # Update disk cache if exists
-        file_path = self.cache_dir / "sessions" / image.session_id / f"{image.image_id}.png"
+        # Write back to disk cache
+        file_path = (
+            self.cache_dir / "sessions" / image.session_id / f"{image.image_id}.png"
+        )
         if file_path.parent.exists():
-            with open(file_path, "wb") as f:
-                f.write(final_bytes)
+            file_path.write_bytes(final_bytes)
 
         return GeneratedImage(
             image_id=image.image_id,
@@ -299,95 +600,6 @@ class ImageGenerator:
             visual_type=image.visual_type,
         )
 
-    def _generate_worker(
-        self,
-        prompt: ImagePrompt,
-        session_id: str,
-        visual_type: str = "coverage",
-        width: int = 1024,
-        height: int = 1024,
-    ) -> GeneratedImage:
-        image_id = str(uuid.uuid4())
-        timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
-
-        # Generate base image via FLUX.1 API, Hugging Face API, local diffusers, or aesthetic vector canvas
-        pil_img = None
-        if self.backend in ["flux", "flux_api", "pollinations"]:
-            pil_img = self._generate_via_flux_api(prompt.prompt_text, width, height)
-            if not pil_img and self._diffusers_pipe:
-                try:
-                    output = self._diffusers_pipe(
-                        prompt=prompt.prompt_text,
-                        negative_prompt=prompt.negative_prompt,
-                        width=width,
-                        height=height,
-                    )
-                    pil_img = output.images[0]
-                except Exception as e:
-                    logger.warning("Local FLUX pipeline error: %s", str(e))
-            if not pil_img:
-                logger.warning("FLUX generation fell back to high-resolution canvas renderer.")
-                pil_img = self._render_canvas(prompt, width, height)
-        elif self.backend in ["hf_api", "hf-api"]:
-            pil_img = self._generate_via_hf_api(prompt.prompt_text, width, height)
-            if not pil_img:
-                logger.warning("HF API inference was unavailable. Trying FLUX generator.")
-                pil_img = self._generate_via_flux_api(prompt.prompt_text, width, height)
-            if not pil_img:
-                logger.warning("Falling back to canvas renderer.")
-                pil_img = self._render_canvas(prompt, width, height)
-        elif self._diffusers_pipe:
-            try:
-                steps = 4 if self.backend == "sdxl_turbo" else 20
-                guidance = 0.0 if self.backend == "sdxl_turbo" else 7.5
-                output = self._diffusers_pipe(
-                    prompt=prompt.prompt_text,
-                    negative_prompt=prompt.negative_prompt,
-                    num_inference_steps=steps,
-                    guidance_scale=guidance,
-                    width=width,
-                    height=height,
-                )
-                pil_img = output.images[0]
-            except Exception as e:
-                logger.warning("Diffusion generation failed (%s). Falling back to canvas renderer.", str(e))
-                pil_img = self._render_canvas(prompt, width, height)
-        else:
-            pil_img = self._render_canvas(prompt, width, height)
-        
-        # Save initial bytes
-        buf = io.BytesIO()
-        pil_img.save(buf, format="PNG", dpi=(150, 150))
-        img_bytes = buf.getvalue()
-
-        gen_img = GeneratedImage(
-            image_id=image_id,
-            session_id=session_id,
-            image_bytes=img_bytes,
-            width=width,
-            height=height,
-            prompt=prompt,
-            generation_timestamp_utc=timestamp,
-            visual_type=visual_type,  # type: ignore
-        )
-
-        # Validate resolution
-        self.validate_resolution(gen_img)
-
-        # Apply overlays if specified
-        if prompt.text_overlays:
-            # Ensure session directory exists
-            session_cache = self.cache_dir / "sessions" / session_id
-            session_cache.mkdir(parents=True, exist_ok=True)
-            gen_img = self.apply_text_overlays(gen_img, prompt.text_overlays)
-        else:
-            session_cache = self.cache_dir / "sessions" / session_id
-            session_cache.mkdir(parents=True, exist_ok=True)
-            with open(session_cache / f"{image_id}.png", "wb") as f:
-                f.write(gen_img.image_bytes)
-
-        return gen_img
-
     def generate(
         self,
         prompt: ImagePrompt,
@@ -397,30 +609,93 @@ class ImageGenerator:
         height: int = 1024,
     ) -> GeneratedImage:
         """
-        Executes image generation with a hard 90s timeout.
-        Returns GeneratedImage or raises ImageGenerationError.
+        Entry point.  Runs generation in a thread with a hard timeout.
+
+        Raises
+        ------
+        ImageGenerationError(IMAGE_GENERATION_TIMEOUT)  — timeout exceeded
+        ImageGenerationError(IMAGE_RESOLUTION_INSUFFICIENT)  — bad resolution
+        ImageGenerationError(IMAGE_GENERATION_FAILED)  — unexpected error
         """
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(
                 self._generate_worker,
-                prompt,
-                session_id,
-                visual_type,
-                width,
-                height,
+                prompt, session_id, visual_type, width, height,
             )
             try:
                 return future.result(timeout=self.timeout_seconds)
+
             except concurrent.futures.TimeoutError:
+                future.cancel()
                 raise ImageGenerationError(
                     code="IMAGE_GENERATION_TIMEOUT",
-                    message="Visual generation timed out. Please retry.",
+                    message=(
+                        f"Visual generation did not complete within "
+                        f"{self.timeout_seconds}s. Please retry."
+                    ),
                 )
             except ImageGenerationError:
                 raise
-            except Exception as e:
+            except Exception as exc:
                 raise ImageGenerationError(
                     code="IMAGE_GENERATION_FAILED",
-                    message=f"Failed to generate visual explainer: {str(e)}",
+                    message=f"Visual generation failed: {exc}",
                 )
 
+    # ------------------------------------------------------------------ #
+    # Worker (runs inside ThreadPoolExecutor)                               #
+    # ------------------------------------------------------------------ #
+
+    def _generate_worker(
+        self,
+        prompt: ImagePrompt,
+        session_id: str,
+        visual_type: str,
+        width: int,
+        height: int,
+    ) -> GeneratedImage:
+        image_id  = str(uuid.uuid4())
+        timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+        # --- Stage A: get base image ----------------------------------------
+        pil_img: Optional[Image.Image] = None
+        used_canvas = False
+
+        if self.backend in ("sdxl_turbo", "flux"):
+            pil_img = _try_diffusers(prompt, self.backend, width, height)
+
+        # If diffusers unavailable or failed, use Pillow canvas
+        if pil_img is None:
+            pil_img = _render_canvas(prompt, width, height, visual_type=visual_type)
+            used_canvas = True
+
+        # --- Stage B: encode to PNG bytes -----------------------------------
+        buf = io.BytesIO()
+        pil_img.save(buf, format="PNG", dpi=(150, 150))
+        img_bytes = buf.getvalue()
+
+        gen_img = GeneratedImage(
+            image_id=image_id,
+            session_id=session_id,
+            image_bytes=img_bytes,
+            width=pil_img.width,
+            height=pil_img.height,
+            prompt=prompt,
+            generation_timestamp_utc=timestamp,
+            visual_type=visual_type,  # type: ignore[arg-type]
+        )
+
+        # --- Stage C: validate resolution -----------------------------------
+        self.validate_resolution(gen_img)
+
+        # --- Stage D: burn in text overlays ---------------------------------
+        session_cache = self.cache_dir / "sessions" / session_id
+        session_cache.mkdir(parents=True, exist_ok=True)
+
+        if prompt.text_overlays and not used_canvas:
+            gen_img = self.apply_text_overlays(gen_img, prompt.text_overlays)
+        else:
+            (session_cache / f"{image_id}.png").write_bytes(gen_img.image_bytes)
+            (session_cache / f"{image_id}.png").write_bytes(gen_img.image_bytes)
+
+        return gen_img

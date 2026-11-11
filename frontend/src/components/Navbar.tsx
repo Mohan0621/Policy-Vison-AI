@@ -1,156 +1,154 @@
-import React from 'react';
-import { RefreshCw, FileText, Eye, MessageSquare, Download, LogOut } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowRight, Shield, Check, LogOut, Search } from 'lucide-react';
 import { UserProfile } from '../api/client';
 
+export type PublicPage = 'home' | 'platform' | 'for_teams' | 'about';
+
 interface NavbarProps {
-  activeTab: 'landing' | 'upload' | 'viewer' | 'qa' | 'export' | 'auth';
-  setActiveTab: (tab: 'landing' | 'upload' | 'viewer' | 'qa' | 'export' | 'auth') => void;
-  documentName?: string;
-  onNewSession?: () => void;
+  currentPage: PublicPage;
+  onNavigatePage: (page: PublicPage) => void;
+  onEnterStudio: () => void;
   user: UserProfile | null;
   onSignInClick: () => void;
   onRegisterClick: () => void;
   onSignOut: () => void;
+  onOpenCommandPalette?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  activeTab,
-  setActiveTab,
-  documentName,
-  onNewSession,
+  currentPage,
+  onNavigatePage,
+  onEnterStudio,
   user,
   onSignInClick,
   onRegisterClick,
   onSignOut,
+  onOpenCommandPalette,
 }) => {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const navLinks: { id: PublicPage; label: string }[] = [
+    { id: 'home', label: 'Home' },
+    { id: 'platform', label: 'Platform' },
+    { id: 'for_teams', label: 'For teams' },
+    { id: 'about', label: 'About' },
+  ];
+
   return (
-    <header className="sticky top-0 z-50 bg-[#FCF8EF]/95 backdrop-blur-md border-b border-[#ECD9B9] px-6 sm:px-12 py-3.5">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
-        {/* Brand identity (Clinia exact typographical layout) */}
+    <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 pointer-events-none">
+      <div
+        className={`mx-auto px-4 sm:px-6 transition-all duration-300 pointer-events-auto ${
+          scrolled
+            ? 'max-w-4xl pt-3'
+            : 'max-w-7xl pt-4'
+        }`}
+      >
         <div
-          onClick={() => setActiveTab('landing')}
-          className="flex items-center space-x-3 cursor-pointer group"
+          className={`flex items-center justify-between px-4 sm:px-6 py-2.5 rounded-full transition-all duration-300 ${
+            scrolled
+              ? 'bg-white/95 backdrop-blur-md shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-black/[0.08]'
+              : 'bg-transparent border border-transparent'
+          }`}
         >
-          <div className="w-8 h-8 rounded-full bg-[#1A1A1E] text-white flex items-center justify-center font-bold text-xs tracking-wider transition-colors group-hover:bg-[#FF5C00]">
-            PV
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="text-base font-extrabold text-[#1A1A1E] tracking-tight">
-                Policy<span className="text-[#FF5C00]">Vision</span>
-              </span>
-              <span className="font-mono text-[10px] text-[#53402C] bg-[#F2EEE5] border border-[#ECD9B9] px-1.5 py-0.5 rounded-full">
-                v2.0
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Center Navigation */}
-        {user ? (
-          /* Authenticated Studio Tabs */
-          <nav className="hidden md:flex items-center space-x-1.5 bg-[#F2EEE5] p-1 rounded-full border border-[#ECD9B9]">
-            {[
-              { id: 'upload', label: 'Upload Document', icon: FileText },
-              { id: 'viewer', label: 'Visuals & Citations', icon: Eye },
-              { id: 'qa', label: 'Policy Q&A', icon: MessageSquare },
-              { id: 'export', label: 'Export', icon: Download },
-            ].map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id as any)}
-                  className={`flex items-center space-x-1.5 px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
-                    isActive
-                      ? 'bg-[#1A1A1E] text-white shadow-2xs font-semibold'
-                      : 'text-[#53402C] hover:text-[#1A1A1E] hover:bg-white/60'
-                  }`}
-                >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#FF5C00]' : 'text-[#95795C]'}`} />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
+          {/* Left: Editorial Navigation Links (Home, Platform, For teams, About) */}
+          <nav className="flex items-center space-x-1 sm:space-x-2">
+            {navLinks.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => {
+                  onNavigatePage(item.id);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors ${
+                  currentPage === item.id
+                    ? 'text-[#000000] font-semibold bg-white/60 sm:bg-transparent'
+                    : 'text-[#52525B] hover:text-[#000000]'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
           </nav>
-        ) : (
-          /* Clinia Exact Public Navigation (ff-mono tt-uppercase) */
-          <nav className="hidden md:flex items-center space-x-8 font-mono text-xs uppercase tracking-wider text-[#53402C]">
-            <button
-              onClick={() => setActiveTab('landing')}
-              className="hover:text-[#1A1A1E] transition-colors"
-            >
-              Product
-            </button>
-            <a href="#policies" className="hover:text-[#1A1A1E] transition-colors">
-              Context Engine
-            </a>
-            <a href="#policies" className="hover:text-[#1A1A1E] transition-colors">
-              Schedules
-            </a>
-            <span className="text-[#ECD9B9]">|</span>
-            <span className="text-[11px] text-[#95795C] font-mono normal-case">
-              IRDAI Guidelines Bounded
+
+          {/* Center: Brand Capsule Pill (IncidentIQ / Serko signature wordmark) */}
+          <div
+            onClick={() => {
+              onNavigatePage('home');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="flex items-center space-x-2 bg-white px-3.5 py-1.5 rounded-full border border-black/[0.06] shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:border-black/[0.14] hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] transition-all cursor-pointer group"
+          >
+            <div className="w-5 h-5 rounded-md bg-[#000000] text-white flex items-center justify-center font-bold text-[10px] group-hover:scale-105 transition-transform">
+              <Shield className="w-3 h-3 text-white fill-white" />
+            </div>
+            <span className="text-xs sm:text-sm font-bold text-[#000000] tracking-tight">
+              PolicyVision<span className="text-[#1B98F2]">.ai</span>
             </span>
-          </nav>
-        )}
+            <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-semibold text-[#17510B] bg-[#C0F2B5] px-2 py-0.5 rounded-full">
+              <Check className="w-2.5 h-2.5" />
+              Visual Gen
+            </span>
+          </div>
 
-        {/* Right side: Active Document, Session Reset & User Profile */}
-        <div className="flex items-center space-x-3">
-          {documentName && (
-            <div className="hidden lg:flex items-center space-x-2 px-3 py-1 rounded-full bg-white border border-[#ECD9B9] text-xs font-mono text-[#1A1A1E] max-w-[220px]">
-              <span className="w-2 h-2 rounded-full bg-[#FF5C00] shrink-0" />
-              <span className="truncate" title={documentName}>{documentName}</span>
-            </div>
-          )}
+          {/* Right: Actions */}
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            {onOpenCommandPalette && (
+              <button
+                onClick={onOpenCommandPalette}
+                className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F4F4F5] hover:bg-[#E4E4E7] text-[#71717A] hover:text-[#000000] border border-[#E4E4E7] text-xs transition-colors"
+                title="Open Command Palette (⌘K)"
+              >
+                <Search className="w-3.5 h-3.5" />
+                <span className="text-[11px] font-medium">Search...</span>
+                <kbd className="font-mono text-[9px] bg-white px-1.5 py-0.5 rounded border border-[#D4D4D8] text-[#52525B]">⌘K</kbd>
+              </button>
+            )}
 
-          {documentName && onNewSession && (
-            <button
-              onClick={onNewSession}
-              title="Reset current policy session"
-              className="p-1.5 text-[#53402C] hover:text-[#1A1A1E] rounded-full hover:bg-[#F2EEE5] border border-[#ECD9B9] transition-colors"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-            </button>
-          )}
-
-          {user ? (
-            /* User profile & Sign Out */
-            <div className="flex items-center space-x-3 pl-3 border-l border-[#ECD9B9]">
-              <div className="text-right hidden sm:block">
-                <div className="text-xs font-bold text-[#1A1A1E] truncate max-w-[140px]">
-                  {user.name}
-                </div>
-                <div className="text-[10px] font-mono text-[#95795C]">
-                  {user.role}
-                </div>
+            {user ? (
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={onEnterStudio}
+                  className="serko-btn-black text-xs py-1.5 px-3.5"
+                >
+                  Enter Studio
+                </button>
+                <button
+                  onClick={onSignOut}
+                  title="Sign out"
+                  className="p-1.5 text-[#71717A] hover:text-rose-600 rounded-full hover:bg-rose-50 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
               </div>
-              <button
-                onClick={onSignOut}
-                title="Sign out of PolicyVision"
-                className="p-1.5 text-[#95795C] hover:text-rose-600 rounded-full hover:bg-rose-50 transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
-            /* Clinia Guest CTAs: Login (--cta-transparent) + Launch Studio (--cta) */
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={onSignInClick}
-                className="btn-clinia-transparent text-xs py-1.5 px-4 font-mono uppercase tracking-wider"
-              >
-                Login
-              </button>
-              <button
-                onClick={onRegisterClick}
-                className="btn-clinia-vital text-xs py-1.5 px-4 font-mono uppercase tracking-wider"
-              >
-                Studio
-              </button>
-            </div>
-          )}
+            ) : (
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={onSignInClick}
+                  className="px-3 py-1.5 text-xs sm:text-sm font-medium text-[#52525B] hover:text-[#000000] transition-colors"
+                >
+                  Log in
+                </button>
+
+                {/* Serko Rainbow Button */}
+                <button
+                  onClick={onRegisterClick}
+                  className="serko-btn-rainbow"
+                >
+                  <span className="!text-xs !py-1.5 !px-3 sm:!px-4 flex items-center gap-1.5">
+                    Launch Studio <ArrowRight className="w-3 h-3 text-[#000000]" />
+                  </span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>

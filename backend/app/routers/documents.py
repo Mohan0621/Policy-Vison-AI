@@ -1,17 +1,25 @@
+"""
+documents.py — updated to use PolicyExtractionPipeline
+"""
 import uuid
-from fastapi import APIRouter, File, HTTPException, Request, UploadFile, status
+from fastapi import APIRouter, File, Request, UploadFile
 from pydantic import BaseModel, Field
 
 from app.models import APIError, APIResponse, DocumentProcessingError, IndexingError
 from app.services.document_processor import DocumentProcessor
 from app.services.rag_pipeline import rag_pipeline
 from app.services.session_manager import session_manager
+from app.services.pdf_pipeline import PolicyExtractionPipeline
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 doc_processor = DocumentProcessor()
+pipeline = PolicyExtractionPipeline()
+
 
 class TextInputRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=10000)
+    language: str = "en"
+
 
 @router.post("/upload")
 async def upload_pdf(request: Request, file: UploadFile = File(...)):
@@ -31,26 +39,29 @@ async def upload_pdf(request: Request, file: UploadFile = File(...)):
         )
 
     file_bytes = await file.read()
+    language   = request.query_params.get("language", "en")
+
+    # Mark as indexing immediately so frontend poll can start
+    session_manager.update_session(session_id, {
+        "policy_document": {
+            "filename": filename,
+            "page_count": 0,
+            "index_status": "indexing",
+        }
+    })
 
     try:
         processed_doc = doc_processor.process_pdf(file_bytes, filename)
     except DocumentProcessingError as e:
+        session_manager.update_session(session_id, {
+            "policy_document": {"filename": filename, "page_count": 0, "index_status": "failed"}
+        })
         return APIResponse(
             success=False,
             error=APIError(code=e.code, message=e.message, retryable=False),
             request_id=req_id,
         )
 
-    # Initialize session document status
-    session_manager.update_session(session_id, {
-        "policy_document": {
-            "filename": filename,
-            "page_count": processed_doc.page_count,
-            "index_status": "indexing",
-        }
-    })
-
-    # Start indexing in background / sync for reliability
     try:
         rag_pipeline.index_document(processed_doc, session_id)
         session_manager.update_session(session_id, {
@@ -60,7 +71,6 @@ async def upload_pdf(request: Request, file: UploadFile = File(...)):
                 "index_status": "ready",
             }
         })
-        index_status = "ready"
     except IndexingError as e:
         session_manager.update_session(session_id, {
             "policy_document": {
@@ -81,10 +91,11 @@ async def upload_pdf(request: Request, file: UploadFile = File(...)):
             "session_id": session_id,
             "document_name": filename,
             "page_count": processed_doc.page_count,
-            "index_status": index_status,
+            "index_status": "ready",
         },
         request_id=req_id,
     )
+
 
 @router.post("/text")
 async def submit_text(request: Request, body: TextInputRequest):
@@ -106,7 +117,7 @@ async def submit_text(request: Request, body: TextInputRequest):
             "filename": "Free Text Policy",
             "page_count": 0,
             "index_status": "indexing",
-        }
+        },
     })
 
     try:
@@ -118,7 +129,6 @@ async def submit_text(request: Request, body: TextInputRequest):
                 "index_status": "ready",
             }
         })
-        index_status = "ready"
     except IndexingError as e:
         return APIResponse(
             success=False,
@@ -131,10 +141,11 @@ async def submit_text(request: Request, body: TextInputRequest):
         data={
             "session_id": session_id,
             "character_count": len(body.text),
-            "index_status": index_status,
+            "index_status": "ready",
         },
         request_id=req_id,
     )
+
 
 @router.get("/status")
 async def get_document_status(request: Request):
@@ -152,4 +163,3 @@ async def get_document_status(request: Request):
         data=session["policy_document"],
         request_id=req_id,
     )
-

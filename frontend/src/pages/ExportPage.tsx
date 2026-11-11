@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, FileArchive, CheckCircle2, AlertTriangle, RefreshCw, Image as ImageIcon } from 'lucide-react';
+import { Download, FileArchive, CheckCircle2, AlertTriangle, RefreshCw, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { apiClient } from '../api/client';
 
 export const ExportPage: React.FC = () => {
@@ -61,17 +61,18 @@ export const ExportPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-8 py-10 space-y-8">
-      {/* Clinia Header */}
-      <div className="border-b border-[#ECD9B9] pb-6 space-y-1">
-        <div className="font-mono text-xs uppercase tracking-wider text-[#FF5C00] font-semibold">
-          Context Engine Export Suite
+    <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8 sm:py-12 space-y-8">
+      {/* Header */}
+      <div className="border-b border-[#E5E7EB] pb-6">
+        <div className="inline-flex items-center gap-2 text-xs font-bold text-[#17510B] border border-[#C0F2B5] rounded-full px-3 py-1 bg-[#C0F2B5]/40 mb-3 shadow-xs">
+          <Sparkles size={12} className="text-[#17510B]" />
+          <span>ASSET PACKAGING & EXPORT SUITE</span>
         </div>
-        <h1 className="font-editorial text-4xl sm:text-5xl font-normal tracking-tight text-[#1A1A1E]">
-          Artifact delivery suite
-        </h1>
-        <p className="text-sm text-[#53402C] mt-1">
-          1024×1024 Print-Ready PNGs (150 DPI) with embedded XMP compliance metadata &amp; structured summary archives.
+        <h2 className="text-3xl sm:text-4xl font-bold text-[#000000] tracking-tight">
+          Artifact Delivery Suite<span className="text-[#1B98F2]">.</span>
+        </h2>
+        <p className="text-sm text-[#71717A] mt-1">
+          1024×1024 Print-Ready PNGs (150 DPI) with embedded XMP metadata & structured summary archives.
         </p>
       </div>
 
@@ -90,7 +91,7 @@ export const ExportPage: React.FC = () => {
             {retryCount < 3 && (
               <button
                 onClick={handleDownloadZip}
-                className="mt-2 text-xs font-bold text-orange-600 underline flex items-center space-x-1"
+                className="mt-2 text-xs font-bold text-[#1B98F2] underline flex items-center space-x-1"
               >
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                 <span>Retry ZIP Bundle</span>
@@ -100,21 +101,21 @@ export const ExportPage: React.FC = () => {
         </div>
       )}
 
-      {/* Primary Bundle ZIP Action Card (Clinia style) */}
-      <div className="card-clinia p-8 relative overflow-hidden group">
+      {/* Primary Bundle ZIP Action Card */}
+      <div className="rounded-3xl p-8 border border-[#E5E7EB] bg-[#F6F6F6] shadow-sm relative overflow-hidden group">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="flex items-start space-x-5">
-            <div className="w-14 h-14 rounded-full bg-[#FCF8EF] border border-[#ECD9B9] text-[#FF5C00] flex items-center justify-center flex-shrink-0 shadow-2xs">
+            <div className="w-14 h-14 rounded-2xl bg-white border border-[#E5E7EB] text-[#000000] flex items-center justify-center flex-shrink-0 shadow-xs">
               <FileArchive className="w-7 h-7" />
             </div>
             <div>
-              <div className="font-mono text-xs uppercase tracking-wider text-[#FF5C00] font-semibold mb-1">
+              <div className="text-xs font-bold text-[#1B98F2] uppercase tracking-wider mb-1">
                 Complete Bundle Archive
               </div>
-              <h3 className="font-editorial text-2xl font-normal text-[#1A1A1E]">
+              <h3 className="font-bold text-xl text-[#000000] tracking-tight">
                 Complete Session Package (.ZIP)
               </h3>
-              <p className="text-xs text-[#53402C] mt-1 max-w-md">
+              <p className="text-xs text-[#71717A] mt-1 max-w-md">
                 Includes all generated high-res visual explainers, embedded XMP metadata tags, and plain-language PDF summary.
               </p>
             </div>
@@ -123,17 +124,17 @@ export const ExportPage: React.FC = () => {
           <button
             onClick={handleDownloadZip}
             disabled={isDownloadingZip}
-            className="btn-clinia-vital py-3 px-6 text-xs font-mono uppercase tracking-wider disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 transition-all flex-shrink-0"
+            className="serko-btn-black !text-sm !py-3.5 !px-8 flex items-center justify-center space-x-2 flex-shrink-0 disabled:opacity-50"
           >
             {isDownloadingZip ? (
               <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
+                <RefreshCw className="w-4 h-4 animate-spin text-white" />
                 <span>ARCHIVING ASSETS...</span>
               </>
             ) : (
               <>
-                <Download className="w-4 h-4" />
-                <span>Download ZIP Bundle</span>
+                <Download className="w-4 h-4 text-white" />
+                <span>DOWNLOAD ZIP BUNDLE</span>
               </>
             )}
           </button>
@@ -142,26 +143,26 @@ export const ExportPage: React.FC = () => {
 
       {/* Individual Asset Cards Grid */}
       <div className="space-y-4">
-        <h3 className="text-base font-bold text-slate-800">
+        <h3 className="text-base font-bold text-[#000000]">
           Individual Asset Downloads
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Card 1: Coverage Infographic */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-center justify-between">
+          <div className="bg-white rounded-2xl p-6 border border-[#E5E7EB] shadow-xs flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 rounded-xl bg-orange-50 border border-orange-200 text-orange-600 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-[#F6F6F6] border border-[#E5E7EB] text-[#000000] flex items-center justify-center">
                 <ImageIcon className="w-6 h-6" />
               </div>
               <div>
-                <h4 className="font-bold text-slate-900 text-sm">Coverage Infographic (PNG)</h4>
-                <p className="text-xs text-slate-500">1024×1024 • 150 DPI • XMP Embedded</p>
+                <h4 className="font-bold text-[#000000] text-sm">Coverage Infographic (PNG)</h4>
+                <p className="text-xs text-[#71717A]">1024×1024 • 150 DPI • XMP Embedded</p>
               </div>
             </div>
             <a
-              href={visuals.length > 0 ? apiClient.export.getImageUrl(visuals[0].image_id) : '/clean_policy_infographic.png'}
+              href={visuals.length > 0 ? apiClient.export.getImageUrl(visuals[0].image_id) : '/coverage_infographic_explainer.png'}
               download="Coverage_Infographic.png"
-              className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-orange-500 hover:text-white text-slate-700 text-xs font-bold transition-colors flex items-center space-x-1.5"
+              className="px-4 py-2 rounded-full bg-[#000000] hover:bg-zinc-800 text-white text-xs font-semibold transition-colors flex items-center space-x-1.5"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Download</span>
@@ -169,20 +170,20 @@ export const ExportPage: React.FC = () => {
           </div>
 
           {/* Card 2: Claims Flowchart */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-center justify-between">
+          <div className="bg-white rounded-2xl p-6 border border-[#E5E7EB] shadow-xs flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 rounded-xl bg-pink-50 border border-pink-200 text-pink-600 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-[#F6F6F6] border border-[#E5E7EB] text-[#000000] flex items-center justify-center">
                 <ImageIcon className="w-6 h-6" />
               </div>
               <div>
-                <h4 className="font-bold text-slate-900 text-sm">Claims Flowchart (PNG)</h4>
-                <p className="text-xs text-slate-500">1024×1024 • 150 DPI • Dual-Path Schema</p>
+                <h4 className="font-bold text-[#000000] text-sm">Claims Flowchart (PNG)</h4>
+                <p className="text-xs text-[#71717A]">1024×1024 • 150 DPI • Dual-Path Schema</p>
               </div>
             </div>
             <a
-              href={visuals.length > 1 ? apiClient.export.getImageUrl(visuals[1].image_id) : '/clean_policy_infographic.png'}
+              href={visuals.length > 1 ? apiClient.export.getImageUrl(visuals[1].image_id) : '/claims_flowchart_explainer.png'}
               download="Claims_Flowchart.png"
-              className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-orange-500 hover:text-white text-slate-700 text-xs font-bold transition-colors flex items-center space-x-1.5"
+              className="px-4 py-2 rounded-full bg-[#000000] hover:bg-zinc-800 text-white text-xs font-semibold transition-colors flex items-center space-x-1.5"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Download</span>
