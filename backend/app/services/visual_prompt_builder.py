@@ -14,7 +14,7 @@ from app.models import (
 STYLE_PROMPTS = {
     VisualStyle.PROFESSIONAL_INFOGRAPHIC: {
         "positive": (
-            "clean award-winning insurance infographic, modern vector illustration, "
+            "clean award-winning flat design infographic, modern vector illustration, "
             "detailed pictorial elements showing modern hospital facade with cross, emergency ambulance, "
             "protection umbrella shield with family silhouettes, and circular coverage progress gauge meter, "
             "crisp structured cards, corporate navy and emerald palette, 150 DPI print-ready graphic design, high resolution"
@@ -23,7 +23,7 @@ STYLE_PROMPTS = {
     },
     VisualStyle.ILLUSTRATED_CARTOON: {
         "positive": (
-            "friendly modern insurance visual explainer, approachable vector illustrations of doctors, "
+            "friendly modern insurance cartoon style visual explainer, approachable vector illustrations of doctors, "
             "family protection umbrella, clinic building with cross, rounded cards, vibrant inviting colors, "
             "clear readable hierarchy, 150 DPI vector layout"
         ),
