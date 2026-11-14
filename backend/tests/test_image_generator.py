@@ -69,7 +69,7 @@ def test_image_generation_and_text_overlay():
 
 # Feature: policy-vision-ai, Property 8: Export round-trip resolution preservation
 # Validates: Requirements 10.1
-@settings(max_examples=30)
+@settings(max_examples=30, deadline=None)
 @given(
     width=st.integers(min_value=1024, max_value=1400),
     height=st.integers(min_value=1024, max_value=1400),

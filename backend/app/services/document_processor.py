@@ -2,7 +2,7 @@ import io
 import re
 import uuid
 import concurrent.futures
-from typing import List, Optional
+from typing import List, Optional, Set
 
 from app.config import settings
 from app.models import (
@@ -10,6 +10,86 @@ from app.models import (
     DocumentProcessingError,
     ProcessedDocument,
 )
+
+class TextPreprocessor:
+    """
+    Production Text Preprocessor for RAG:
+    - Strips repetitive running headers & footers across 100-page policy PDFs.
+    - De-hyphenates words split across line breaks (e.g. 'hospi-\\ntalization' -> 'hospitalization').
+    - Normalizes typographic unicode quotes, em-dashes, and whitespace.
+    - Identifies structured clause codes (e.g. 'Section 2.1', 'Clause 4(a)', 'Schedule B').
+    """
+    @staticmethod
+    def normalize_unicode(text: str) -> str:
+        replacements = {
+            "\u2018": "'", "\u2019": "'",
+            "\u201c": '"', "\u201d": '"',
+            "\u2013": "-", "\u2014": "-",
+            "\u00a0": " ", "\u2022": "-",
+        }
+        for orig, repl in replacements.items():
+            text = text.replace(orig, repl)
+        return text
+
+    @staticmethod
+    def dehyphenate(text: str) -> str:
+        # Re-connects words broken across linebreaks by hyphenation
+        return re.sub(r"(\b[a-zA-Z]{3,})-\s*\n\s*([a-zA-Z]{2,}\b)", r"\1\2", text)
+
+    @staticmethod
+    def detect_running_headers_footers(pages_text: List[str]) -> Set[str]:
+        if len(pages_text) < 3:
+            return set()
+        candidates: dict = {}
+        for p in pages_text:
+            lines = [l.strip() for l in p.splitlines() if l.strip()]
+            if not lines:
+                continue
+            boundary_lines = set(lines[:2] + lines[-2:])
+            for line in boundary_lines:
+                if 5 <= len(line) <= 80 and not re.match(r"^Page \d+(?: of \d+)?$", line, re.I):
+                    candidates[line] = candidates.get(line, 0) + 1
+
+        threshold = max(2, len(pages_text) * 0.25)
+        return {line for line, count in candidates.items() if count >= threshold}
+
+    @staticmethod
+    def clean_text_for_rag(text: str, running_noise: Optional[Set[str]] = None) -> str:
+        if not text:
+            return ""
+        text = TextPreprocessor.normalize_unicode(text)
+        text = TextPreprocessor.dehyphenate(text)
+
+        # Clean HTML linebreaks and formatting tags
+        text = re.sub(r"<br\s*/?>", " ", text, flags=re.I)
+        text = re.sub(r"</?[a-zA-Z0-9]+[^>]*>", " ", text)
+        # Clean markdown table pipes and separators
+        text = re.sub(r"\|+", " ", text)
+        # Normalize double asterisks/markdown hashes
+        text = text.replace("**", "").replace("##", "")
+
+        lines = []
+        for line in text.splitlines():
+            s = line.strip()
+            if not s:
+                continue
+            if running_noise and s in running_noise:
+                continue
+            if re.match(r"^<!-- Page \d+ -->$", s) or re.match(r"^Page \d+(?: of \d+)?$", s, re.I):
+                continue
+            # Remove lingering bullets and leading symbols
+            s = re.sub(r"^[\s\-•●*]+\s*", "", s)
+            if s:
+                lines.append(s)
+
+        return "\n".join(lines)
+
+    @staticmethod
+    def extract_clause_code(text: str) -> str:
+        m = re.search(r"\b(Section|Clause|Schedule|Condition|Article)\s+([A-Za-z0-9]+(?:\.[A-Za-z0-9]+)*)", text, re.I)
+        if m:
+            return f"{m.group(1).capitalize()} {m.group(2)}"
+        return ""
 
 class DocumentProcessor:
     def __init__(
@@ -100,6 +180,7 @@ class DocumentProcessor:
 
         chunks: List[DocumentChunk] = []
         raw_markdown_pages: List[str] = []
+        raw_pages_text: List[str] = []
 
         try:
             import pymupdf4llm
@@ -107,11 +188,10 @@ class DocumentProcessor:
         except ImportError:
             has_pymupdf4llm = False
 
+        # Pass 1: Extract all raw page text
         for page_idx in range(page_count):
-            page_num = page_idx + 1
             page = doc[page_idx]
             page_text = ""
-            
             if has_pymupdf4llm:
                 try:
                     page_text = pymupdf4llm.to_markdown(doc, pages=[page_idx])
@@ -133,19 +213,30 @@ class DocumentProcessor:
                 except Exception:
                     pass
 
-            raw_markdown_pages.append(f"<!-- Page {page_num} -->\n" + page_text)
-            
+            raw_pages_text.append(page_text)
+
+        # Detect repetitive running headers and footers across the document
+        running_noise = TextPreprocessor.detect_running_headers_footers(raw_pages_text)
+
+        # Pass 2: Clean, dehyphenate, and extract structured chunks
+        for page_idx, page_text in enumerate(raw_pages_text):
+            page_num = page_idx + 1
+            cleaned_page = TextPreprocessor.clean_text_for_rag(page_text, running_noise)
+            raw_markdown_pages.append(f"<!-- Page {page_num} -->\n" + cleaned_page)
+
             # Extract section headings & blocks
             current_heading = f"Page {page_num}"
-            lines = page_text.splitlines()
+            lines = cleaned_page.splitlines()
             buffer: List[str] = []
-            
+
             for line in lines:
                 stripped = line.strip()
                 if not stripped:
                     continue
+
+                clause_code = TextPreprocessor.extract_clause_code(stripped)
+
                 if stripped.startswith("#"):
-                    # Flush previous paragraph buffer if any
                     if buffer:
                         b_text = " ".join(buffer).strip()
                         if b_text:
@@ -158,7 +249,8 @@ class DocumentProcessor:
                                 token_count=max(1, len(b_text.split())),
                             ))
                         buffer = []
-                    current_heading = stripped.lstrip("#").strip()
+                    heading_text = stripped.lstrip("#").strip()
+                    current_heading = f"{clause_code}: {heading_text}" if clause_code and clause_code not in heading_text else heading_text
                     chunks.append(DocumentChunk(
                         chunk_id=str(uuid.uuid4()),
                         text=stripped,
@@ -199,6 +291,8 @@ class DocumentProcessor:
                         token_count=max(1, len(stripped.split())),
                     ))
                 else:
+                    if clause_code and clause_code not in current_heading and len(stripped) < 80:
+                        current_heading = f"{clause_code}: {current_heading}"
                     buffer.append(stripped)
 
             if buffer:

@@ -43,6 +43,20 @@ def compute_fk_grade(text: str) -> float:
         return max(1.0, min(16.0, round(grade, 1)))
 
 
+def _sanitize_field_text(text: Optional[str]) -> Optional[str]:
+    if not text:
+        return None
+    # Strip HTML tags
+    t = re.sub(r"<[^>]+>", " ", text)
+    # Strip table pipes and markdown symbols
+    t = re.sub(r"\|+", " ", t)
+    t = t.replace("**", "").replace("##", "")
+    # Strip leading bullets, punctuation and dashes
+    t = re.sub(r"^[\s\-•●*:=]+\s*", "", t)
+    # Collapse multiple whitespaces
+    t = re.sub(r"\s+", " ", t).strip()
+    return t if t else None
+
 class LLMEngine:
     def __init__(
         self,
@@ -123,7 +137,6 @@ class LLMEngine:
 
         combined_text = "\n\n".join([f"[{p.chunk_id}] {p.text}" for p in passages])
         
-        # Look for key insurance patterns in passages
         coverage_type_val = None
         coverage_limits_val = None
         premium_details_val = None
@@ -133,33 +146,63 @@ class LLMEngine:
         cov_ids, limit_ids, prem_ids, excl_ids, claim_ids = [], [], [], [], []
 
         for p in passages:
-            t = p.text.lower()
-            if any(k in t for k in ["health insurance", "life insurance", "motor", "vehicle", "comprehensive", "policy type", "coverage type"]):
+            clean_p = _sanitize_field_text(p.text) or ""
+            t = clean_p.lower()
+
+            if any(k in t for k in ["arogya sanjeevani", "health insurance", "standard health", "comprehensive", "policy type", "coverage type"]):
                 if not coverage_type_val:
-                    # Extract sentence
-                    coverage_type_val = p.text.split("\n")[0][:120]
+                    for line in clean_p.splitlines():
+                        if any(k in line.lower() for k in ["arogya sanjeevani", "health insurance", "policy", "cover"]):
+                            coverage_type_val = line[:120].strip()
+                            break
+                    if not coverage_type_val:
+                        coverage_type_val = clean_p[:120]
                 cov_ids.append(p.chunk_id)
-            if any(k in t for k in ["sum insured", "coverage limit", "limit of liability", "up to rs", "₹", "maximum benefit"]):
-                if not coverage_limits_val:
-                    coverage_limits_val = p.text[:150]
+
+            if any(k in t for k in ["sum insured", "coverage limit", "limit of liability", "up to rs", "₹", "maximum benefit", "basic sum"]):
+                if not coverage_limits_val and not any(neg in t[:40] for neg in ["dietary", "cosmetic", "maternity", "migration"]):
+                    for sent in re.split(r"[.\n]", clean_p):
+                        if any(k in sent.lower() for k in ["sum insured", "limit", "₹", "rs"]):
+                            coverage_limits_val = sent.strip()[:140]
+                            break
+                    if not coverage_limits_val:
+                        coverage_limits_val = clean_p[:140]
                 limit_ids.append(p.chunk_id)
-            if any(k in t for k in ["premium", "payment", "annual", "monthly installment", "deductible"]):
+
+            if any(k in t for k in ["room rent", "icu", "sub-limit", "co-pay", "premium", "deductible"]):
                 if not premium_details_val:
-                    premium_details_val = p.text[:150]
+                    for sent in re.split(r"[.\n]", clean_p):
+                        if any(k in sent.lower() for k in ["room rent", "icu", "sub-limit", "co-pay", "premium"]):
+                            premium_details_val = sent.strip()[:140]
+                            break
+                    if not premium_details_val:
+                        premium_details_val = clean_p[:140]
                 prem_ids.append(p.chunk_id)
-            if any(k in t for k in ["exclusion", "what is not covered", "not covered", "waiting period", "permanent exclusion"]):
+
+            if any(k in t for k in ["waiting period", "exclusion", "not covered", "pre-existing", "ped"]):
                 if not exclusions_val:
-                    exclusions_val = p.text[:200]
+                    for sent in re.split(r"[.\n]", clean_p):
+                        if any(k in sent.lower() for k in ["waiting period", "pre-existing", "exclusion"]):
+                            exclusions_val = sent.strip()[:160]
+                            break
+                    if not exclusions_val:
+                        exclusions_val = clean_p[:160]
                 excl_ids.append(p.chunk_id)
-            if any(k in t for k in ["claim", "reimbursement", "cashless", "intimation", "hospitalization", "submit"]):
+
+            if any(k in t for k in ["cashless", "intimation", "network hospital", "tpa", "claim procedure", "pre-authorization"]):
                 if not claim_proc_val:
-                    claim_proc_val = p.text[:200]
+                    for sent in re.split(r"[.\n]", clean_p):
+                        if any(k in sent.lower() for k in ["cashless", "intimation", "tpa", "network"]):
+                            claim_proc_val = sent.strip()[:160]
+                            break
+                    if not claim_proc_val:
+                        claim_proc_val = clean_p[:160]
                 claim_ids.append(p.chunk_id)
 
         # Fallback to defaults from passages if available
         first_id = [passages[0].chunk_id] if passages else []
         if not coverage_type_val and passages:
-            coverage_type_val = "Comprehensive Policy Coverage"
+            coverage_type_val = "Comprehensive Health Insurance Policy"
             cov_ids = first_id
         if not coverage_limits_val and passages:
             numbers = self._extract_numbers(combined_text)
@@ -168,27 +211,27 @@ class LLMEngine:
 
         return PolicyFields(
             coverage_type=PolicyField(
-                value=coverage_type_val,
+                value=_sanitize_field_text(coverage_type_val),
                 status="found" if coverage_type_val else "not_found",
                 source_passage_ids=cov_ids,
             ),
             coverage_limits=PolicyField(
-                value=coverage_limits_val,
+                value=_sanitize_field_text(coverage_limits_val),
                 status="found" if coverage_limits_val else "not_found",
                 source_passage_ids=limit_ids,
             ),
             premium_details=PolicyField(
-                value=premium_details_val,
+                value=_sanitize_field_text(premium_details_val),
                 status="found" if premium_details_val else "not_found",
                 source_passage_ids=prem_ids,
             ),
             exclusions=PolicyField(
-                value=exclusions_val,
+                value=_sanitize_field_text(exclusions_val),
                 status="found" if exclusions_val else "not_found",
                 source_passage_ids=excl_ids,
             ),
             claim_procedures=PolicyField(
-                value=claim_proc_val,
+                value=_sanitize_field_text(claim_proc_val),
                 status="found" if claim_proc_val else "not_found",
                 source_passage_ids=claim_ids,
             ),
@@ -560,7 +603,10 @@ class LLMEngine:
                     continue
                 match = re.match(r"^(?:step\s*\d+[:.]?|\d+[.)])\s*(.*)", stripped, re.IGNORECASE)
                 if match or any(k in stripped.lower() for k in ["intimate", "submit document", "discharge", "settlement", "claim form"]):
-                    desc = match.group(1) if match else stripped
+                    raw_desc = match.group(1) if match else stripped
+                    desc = _sanitize_field_text(raw_desc) or ""
+                    if len(desc) < 5:
+                        continue
                     path_label = None
                     if "cashless" in desc.lower():
                         path_label = "cashless"
@@ -569,7 +615,7 @@ class LLMEngine:
 
                     steps.append(ClaimStep(
                         step_number=step_idx,
-                        title=desc[:50],
+                        title=desc[:50].strip(" -:•"),
                         description=desc,
                         path_label=path_label,
                         is_branch_point=(has_cashless and has_reimbursement and step_idx == 1),

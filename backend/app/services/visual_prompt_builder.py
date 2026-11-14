@@ -1,5 +1,5 @@
 import re
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from app.models import (
     ClaimStep,
@@ -47,6 +47,51 @@ class VisualPromptBuilder:
         config = STYLE_PROMPTS.get(style, STYLE_PROMPTS[VisualStyle.PROFESSIONAL_INFOGRAPHIC])
         return config["positive"], config["negative"]
 
+    @staticmethod
+    def compile_flux_prompt(subject: str, layout_type: str, details: str, text_labels: List[str]) -> str:
+        """
+        FLUX.1 Engine Compiler:
+        Natural language cinematography & commercial art direction brief.
+        Physical materials, lighting, and explicit quoted typography.
+        """
+        quotes_str = ", ".join([f'"{lbl}"' for lbl in text_labels[:4]])
+        return (
+            f"Commercial art direction photograph and vector visual explainer for {subject}. "
+            f"Composition: 1:1 square aspect ratio, modular {layout_type} layout, generous clean negative space. "
+            f"Materials: Frosted glassmorphism panels, beveled white card surfaces, soft drop-shadows, matte finish. "
+            f"Lighting: Soft diffused studio softbox lighting with subtle ambient occlusion and edge rim highlights. "
+            f"Palette: Modern slate navy (#0F172A), vibrant royal blue (#2563EB), emerald (#059669), and amber (#D97706). "
+            f"Content details: {details}. "
+            f"Explicit legible typography reading: {quotes_str}. High resolution, 150 DPI print-ready graphic design."
+        )
+
+    @staticmethod
+    def compile_ideogram_prompt(subject: str, layout_type: str, details: str, text_labels: List[str]) -> str:
+        """
+        Ideogram Engine Compiler:
+        Poster/vector infographic design with graphic hierarchy and double-quoted title badges.
+        """
+        quotes_str = ", ".join([f'"{lbl}"' for lbl in text_labels[:4]])
+        return (
+            f"Vector infographic poster design: {subject}. "
+            f"Format: Modern corporate dashboard {layout_type} with structured cards, rounded pill badges, and vector icons. "
+            f"Color Scheme: Crisp white background, navy headers, emerald and blue accents. "
+            f"Typography: Bold legible sans-serif text labels featuring {quotes_str}. "
+            f"Key metrics: {details}. Award-winning editorial layout, vector illustration, sharp edges, 150 DPI."
+        )
+
+    @staticmethod
+    def compile_midjourney_prompt(subject: str, layout_type: str, details: str, style_name: str = "infographic") -> str:
+        """
+        Midjourney Engine Compiler:
+        Front-loaded subject tokens, clean aesthetic descriptors, and CLI parameters.
+        """
+        return (
+            f"{subject}, modern {style_name} layout, {details}, "
+            f"fintech dashboard UI, vector medical icons, clean typography, soft studio lighting, "
+            f"minimalist corporate aesthetic --ar 1:1 --v 6.0 --style raw"
+        )
+
     def build_coverage_prompt(
         self,
         fields: PolicyFields,
@@ -60,9 +105,13 @@ class VisualPromptBuilder:
         limits_text = fields.coverage_limits.value or ""
         type_text = fields.coverage_type.value or "Hospitalization & Inpatient Care"
         prem_text = fields.premium_details.value or ""
+        excl_text = fields.exclusions.value or ""
 
         # Extract numeric values
-        numbers = re.findall(r"(?:Rs\.?|₹|\$)?\s*\d+(?:,\d+)*(?:\.\d+)?(?:\s*(?:lakh|crore|thousand))?", f"{limits_text} {type_text} {prem_text}")
+        numbers = re.findall(
+            r"(?:Rs\.?|₹|\$)?\s*\d+(?:,\d+)*(?:\.\d+)?(?:\s*(?:lakh|crore|thousand))?",
+            f"{limits_text} {type_text} {prem_text}"
+        )
         
         amt1 = numbers[0] if len(numbers) > 0 else "Rs. 5,00,000"
         amt2 = numbers[1] if len(numbers) > 1 else "Rs. 50,000"
@@ -125,6 +174,25 @@ class VisualPromptBuilder:
                 relevance_score=0.9,
             ))
 
+        # Compilers based on leading industry practices
+        labels = [amt1, amt2, amt3, "COVERAGE OVERVIEW"]
+        compiled = {
+            "flux": self.compile_flux_prompt(f"Policy Coverage for {type_text}", "dashboard infographic", categories_str, labels),
+            "ideogram": self.compile_ideogram_prompt(f"Coverage Schedule for {type_text}", "card dashboard", categories_str, labels),
+            "midjourney": self.compile_midjourney_prompt(f"Health insurance coverage infographic for {type_text}", "infographic", categories_str, "infographic"),
+        }
+
+        structured = {
+            "type": "coverage",
+            "title": type_text,
+            "sum_insured": amt1,
+            "sub_limit": amt2,
+            "additional": amt3,
+            "categories": categories,
+            "premium_details": prem_text,
+            "exclusions": excl_text,
+        }
+
         return ImagePrompt(
             prompt_text=prompt_text,
             negative_prompt=neg_style,
@@ -132,6 +200,8 @@ class VisualPromptBuilder:
             language=language,
             text_overlays=overlays,
             source_citations=citations,
+            compiled_prompts=compiled,
+            structured_data=structured,
         )
 
     def build_claims_prompt(
@@ -193,6 +263,28 @@ class VisualPromptBuilder:
             ))
             y_offset += 70
 
+        labels = [s.title for s in sorted_steps[:4]] or ["Cashless Claim", "Reimbursement", "Intimation", "Settlement"]
+        compiled = {
+            "flux": self.compile_flux_prompt("Insurance Claims Procedure Flowchart", "dual-path workflow", steps_joined, labels),
+            "ideogram": self.compile_ideogram_prompt("Claims Process Diagram", "sequential flowchart", steps_joined, labels),
+            "midjourney": self.compile_midjourney_prompt("Claims process flowchart diagram", "flowchart diagram", steps_joined, "technical flowchart"),
+        }
+
+        structured = {
+            "type": "claims",
+            "title": "CLAIMS PROCEDURE FLOWCHART",
+            "steps": [
+                {
+                    "step_number": s.step_number,
+                    "title": s.title,
+                    "description": s.description,
+                    "path_label": s.path_label,
+                }
+                for s in sorted_steps
+            ],
+            "has_dual_path": has_dual_path or any(s.path_label for s in sorted_steps),
+        }
+
         return ImagePrompt(
             prompt_text=prompt_text,
             negative_prompt=neg_style,
@@ -200,6 +292,8 @@ class VisualPromptBuilder:
             language=language,
             text_overlays=overlays,
             source_citations=[],
+            compiled_prompts=compiled,
+            structured_data=structured,
         )
 
     def build_qa_visual_prompt(
@@ -234,6 +328,12 @@ class VisualPromptBuilder:
             ),
         ]
 
+        compiled = {
+            "flux": self.compile_flux_prompt("Policy Query Explainer", "single-topic card", answer.text[:120], ["POLICY Q&A", "VERIFIED CLAUSE"]),
+            "ideogram": self.compile_ideogram_prompt("Policy QA Breakdown", "explanatory card", answer.text[:120], ["POLICY Q&A", "VERIFIED CLAUSE"]),
+            "midjourney": self.compile_midjourney_prompt("Policy question breakdown infographic", "infographic", answer.text[:120], "infographic"),
+        }
+
         return ImagePrompt(
             prompt_text=prompt_text,
             negative_prompt=neg_style,
@@ -241,5 +341,6 @@ class VisualPromptBuilder:
             language=language,
             text_overlays=overlays,
             source_citations=answer.citations,
+            compiled_prompts=compiled,
+            structured_data={"type": "qa_answer", "answer": answer.text},
         )
-

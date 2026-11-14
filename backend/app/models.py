@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Generic, Literal, TypeVar, Optional, List, Tuple
+from typing import Generic, Literal, TypeVar, Optional, List, Tuple, Dict, Any
 from pydantic import BaseModel, Field
 
 T = TypeVar("T")
@@ -84,6 +84,8 @@ class ImagePrompt:
     language: str
     text_overlays: List[TextOverlay]
     source_citations: List[SourceCitation]
+    compiled_prompts: Optional[Dict[str, str]] = None
+    structured_data: Optional[Dict[str, Any]] = None
 
 @dataclass
 class GeneratedImage:
