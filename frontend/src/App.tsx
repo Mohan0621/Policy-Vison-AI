@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar, PublicPage } from './components/Navbar';
-import { WorkspaceHeader } from './components/WorkspaceHeader';
+import { AppSidebar, StudioTab } from './components/AppSidebar';
+import { WorkspaceTopBar } from './components/WorkspaceTopBar';
 import { SessionBanner } from './components/SessionBanner';
 import { CustomCursor } from './components/CustomCursor';
 import { ToastProvider } from './components/SerkoToast';
@@ -17,7 +18,6 @@ import { QAPage } from './pages/QAPage';
 import { ExportPage } from './pages/ExportPage';
 import { apiClient, IndianLanguage, VisualStyle, UserProfile } from './api/client';
 
-type StudioTab = 'upload' | 'viewer' | 'qa' | 'export';
 type AppView = PublicPage | 'auth' | StudioTab;
 
 export const AppContent: React.FC = () => {
@@ -38,6 +38,7 @@ export const AppContent: React.FC = () => {
   const [sessionBannerMsg, setSessionBannerMsg] = useState<string | null>(null);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isCitationDrawerOpen, setIsCitationDrawerOpen] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     // Global ⌘K / Ctrl+K keyboard shortcut
@@ -120,8 +121,109 @@ export const AppContent: React.FC = () => {
     }
   };
 
+  // 1. STUDIO VIEWPORT: Left Sidebar + Modern Content Shell
+  if (isStudioView) {
+    return (
+      <div className="h-screen flex bg-[#FAFAFA] text-[#09090B] selection:bg-[#CF69E0]/25 relative overflow-hidden font-sans">
+        {/* Custom Kinetic Cursor */}
+        <CustomCursor />
+
+        {/* Session Notification Banner */}
+        {sessionBannerMsg && (
+          <SessionBanner
+            message={sessionBannerMsg}
+            onDismiss={() => {
+              setSessionBannerMsg(null);
+              setCurrentView('upload');
+            }}
+          />
+        )}
+
+        {/* Modern Sidebar Navigation */}
+        <AppSidebar
+          activeTab={currentView as StudioTab}
+          setActiveTab={(tab) => setCurrentView(tab)}
+          documentName={documentName}
+          onNewSession={documentName ? handleResetSession : undefined}
+          user={user}
+          onBackToWebsite={() => setCurrentView('home')}
+          onSignOut={handleSignOut}
+          onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+          onOpenCitationDrawer={() => setIsCitationDrawerOpen(true)}
+          selectedLanguage={selectedLanguage}
+          isMobileOpen={isMobileSidebarOpen}
+          onCloseMobile={() => setIsMobileSidebarOpen(false)}
+        />
+
+        {/* Right Content Area */}
+        <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+          <WorkspaceTopBar
+            activeTab={currentView as StudioTab}
+            documentName={documentName}
+            selectedLanguage={selectedLanguage}
+            onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+            onOpenCitationDrawer={() => setIsCitationDrawerOpen(true)}
+            onNewSession={documentName ? handleResetSession : undefined}
+            onBackToWebsite={() => setCurrentView('home')}
+            onToggleMobile={() => setIsMobileSidebarOpen((prev) => !prev)}
+          />
+
+          <main className="flex-1 overflow-y-auto bg-[#FAFAFA]">
+            {currentView === 'upload' && (
+              <UploadPage onSuccess={handleUploadSuccess} />
+            )}
+
+            {currentView === 'viewer' && (
+              <ViewerPage
+                currentLanguage={selectedLanguage}
+                currentStyle={selectedStyle}
+                onStyleChange={(newStyle) => setSelectedStyle(newStyle)}
+                onLanguageChange={(newLang) => setSelectedLanguage(newLang)}
+                onOpenCitationDrawer={() => setIsCitationDrawerOpen(true)}
+              />
+            )}
+
+            {currentView === 'qa' && (
+              <QAPage
+                currentLanguage={selectedLanguage}
+                currentStyle={selectedStyle}
+              />
+            )}
+
+            {currentView === 'export' && (
+              <ExportPage />
+            )}
+          </main>
+        </div>
+
+        {/* Global Command Palette (⌘K) */}
+        <CommandPalette
+          isOpen={isCommandPaletteOpen}
+          onClose={() => setIsCommandPaletteOpen(false)}
+          onNavigate={(view) => setCurrentView(view as AppView)}
+          onSelectLanguage={(lang) => setSelectedLanguage(lang)}
+          onOpenCitationDrawer={() => setIsCitationDrawerOpen(true)}
+          onOpenDiffModal={() => {
+            setCurrentView('home');
+            setTimeout(() => {
+              const el = document.getElementById('before-after-diff');
+              el?.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+          }}
+        />
+
+        {/* Global IRDAI Clause Citation Drawer */}
+        <ClauseCitationDrawer
+          isOpen={isCitationDrawerOpen}
+          onClose={() => setIsCitationDrawerOpen(false)}
+        />
+      </div>
+    );
+  }
+
+  // 2. PUBLIC MULTI-PAGE & AUTH VIEWPORT
   return (
-    <div className="min-h-screen flex flex-col bg-white text-[#000000] selection:bg-[#CF69E0]/25 relative overflow-x-hidden">
+    <div className="min-h-screen flex flex-col bg-white text-[#000000] selection:bg-[#CF69E0]/25 relative overflow-x-hidden font-sans">
       {/* Custom Kinetic Cursor */}
       <CustomCursor />
 
@@ -136,7 +238,7 @@ export const AppContent: React.FC = () => {
         />
       )}
 
-      {/* 1. Public Multi-Page Navigation Bar */}
+      {/* Public Multi-Page Navigation Bar */}
       {isPublicView && (
         <Navbar
           currentPage={currentView as PublicPage}
@@ -156,23 +258,8 @@ export const AppContent: React.FC = () => {
         />
       )}
 
-      {/* 2. Inside UI Dedicated Workspace Header (AgentOps Serko workbench header) */}
-      {isStudioView && (
-        <WorkspaceHeader
-          activeTab={currentView as StudioTab}
-          setActiveTab={(tab) => setCurrentView(tab)}
-          documentName={documentName}
-          onNewSession={documentName ? handleResetSession : undefined}
-          user={user}
-          onBackToWebsite={() => setCurrentView('home')}
-          onSignOut={handleSignOut}
-          onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
-        />
-      )}
-
       {/* Main Viewport Content */}
       <main className="flex-1">
-        {/* PUBLIC MULTI-PAGE VIEWS */}
         {currentView === 'home' && (
           <LandingPage
             onEnterStudio={handleEnterStudio}
@@ -230,38 +317,12 @@ export const AppContent: React.FC = () => {
           />
         )}
 
-        {/* AUTHENTICATION VIEW */}
         {currentView === 'auth' && (
           <AuthPage
             initialMode={authMode}
             onSuccess={handleAuthSuccess}
             onBackToHome={() => setCurrentView('home')}
           />
-        )}
-
-        {/* INSIDE WORKSPACE SCREENS */}
-        {currentView === 'upload' && (
-          <UploadPage onSuccess={handleUploadSuccess} />
-        )}
-
-        {currentView === 'viewer' && (
-          <ViewerPage
-            currentLanguage={selectedLanguage}
-            currentStyle={selectedStyle}
-            onStyleChange={(newStyle) => setSelectedStyle(newStyle)}
-            onOpenCitationDrawer={() => setIsCitationDrawerOpen(true)}
-          />
-        )}
-
-        {currentView === 'qa' && (
-          <QAPage
-            currentLanguage={selectedLanguage}
-            currentStyle={selectedStyle}
-          />
-        )}
-
-        {currentView === 'export' && (
-          <ExportPage />
         )}
       </main>
 
@@ -286,23 +347,6 @@ export const AppContent: React.FC = () => {
         isOpen={isCitationDrawerOpen}
         onClose={() => setIsCitationDrawerOpen(false)}
       />
-
-      {/* Inside UI Studio Footer (Shown when inside workbench) */}
-      {isStudioView && (
-        <footer className="border-t border-[#E5E7EB] bg-[#F6F6F6] py-4 px-6 sm:px-12 text-[#71717A] text-xs flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center space-x-3">
-            <span className="w-2 h-2 rounded-full bg-[#158142]"></span>
-            <span className="text-[#000000] font-bold tracking-tight">PolicyVision Studio</span>
-            <span className="text-[#D4D4D8]">|</span>
-            <span className="text-[#71717A] hidden md:inline">Generative Insurance Explainer Synthesis · 1024×1024 150 DPI</span>
-          </div>
-          <div className="flex items-center space-x-6 text-[11px] text-[#71717A]">
-            <span>8 Indic Languages</span>
-            <span>Deterministic Grounding</span>
-            <span>&copy; 2026 PolicyVision AI</span>
-          </div>
-        </footer>
-      )}
     </div>
   );
 };

@@ -16,9 +16,13 @@ class Settings(BaseSettings):
     # Backends
     SESSION_BACKEND: str = "memory"  # "memory" or "redis"
     REDIS_URL: str = "redis://localhost:6379/0"
-    LLM_BACKEND: str = "heuristic"  # "heuristic", "llama_cpp", "transformers"
+    LLM_BACKEND: str = os.getenv("LLM_BACKEND", "groq")  # "groq", "heuristic", "llama_cpp", "transformers"
     IMAGE_BACKEND: str = "canvas"  # "canvas", "flux", "hf_api", "sdxl", "sdxl_turbo"
     ENABLE_OCR: bool = False
+    
+    # Groq API Configs
+    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
+    GROQ_MODEL: str = os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b")
     
     # Hugging Face API Configs
     HF_API_TOKEN: str = os.getenv("HF_API_TOKEN", "")
@@ -48,7 +52,7 @@ class Settings(BaseSettings):
     MAX_QA_HISTORY: int = 10
     
     class Config:
-        env_file = ".env"
+        env_file = [str(Path(__file__).resolve().parent.parent / ".env"), ".env"]
         extra = "ignore"
 
 settings = Settings()

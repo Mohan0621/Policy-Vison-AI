@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Trash2, Bot, User, Sparkles, Loader2, Info } from 'lucide-react';
 import { apiClient, IndianLanguage, QAMessage, VisualStyle } from '../api/client';
+import { PromptSuggestionChips } from '../components/qa/PromptSuggestionChips';
 
 interface QAPageProps {
   currentLanguage: IndianLanguage;
@@ -33,11 +34,11 @@ export const QAPage: React.FC<QAPageProps> = ({ currentLanguage, currentStyle })
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
 
-  const handleSend = async (e?: React.FormEvent) => {
+  const handleSend = async (customQ?: string, e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!inputQuestion.trim() || isLoading) return;
+    const q = (typeof customQ === 'string' ? customQ : inputQuestion).trim();
+    if (!q || isLoading) return;
 
-    const q = inputQuestion.trim();
     setInputQuestion('');
     setErrorMsg(null);
     setIsLoading(true);
@@ -117,16 +118,21 @@ export const QAPage: React.FC<QAPageProps> = ({ currentLanguage, currentStyle })
       {/* Messages Scroll Area */}
       <div className="flex-1 overflow-y-auto space-y-5 pr-2">
         {messages.length === 0 ? (
-          <div className="text-center py-20 text-[#71717A]">
-            <div className="w-14 h-14 rounded-2xl bg-[#F6F6F6] border border-[#E5E7EB] flex items-center justify-center mx-auto mb-4 text-[#000000] shadow-xs">
-              <Bot className="w-7 h-7" />
+          <div className="py-8 text-center text-[#71717A] max-w-2xl mx-auto">
+            <div className="w-12 h-12 rounded-2xl bg-[#F6F6F6] border border-[#E5E7EB] flex items-center justify-center mx-auto mb-3 text-[#000000] shadow-xs">
+              <Bot className="w-6 h-6 text-[#1B98F2]" />
             </div>
             <h4 className="font-bold text-[#000000] text-base">
-              Ready to Answer Questions
+              Ready to Answer Policy Questions
             </h4>
-            <p className="text-xs text-[#71717A] mt-1.5 max-w-md mx-auto">
-              Inquire about cashless hospital networks, copayment sub-limits, specific exclusion clauses, or emergency pre-authorization rules.
+            <p className="text-xs text-[#71717A] mt-1 max-w-md mx-auto">
+              Ask anything about cashless hospital networks, copayment sub-limits, specific exclusion clauses, or pre-authorization turnaround times.
             </p>
+
+            <PromptSuggestionChips
+              onSelectPrompt={(promptText) => handleSend(promptText)}
+              isLoading={isLoading}
+            />
           </div>
         ) : (
           messages.map((m, idx) => (
@@ -135,7 +141,7 @@ export const QAPage: React.FC<QAPageProps> = ({ currentLanguage, currentStyle })
               className={`flex items-start space-x-3.5 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {m.role === 'assistant' && (
-                <div className="w-8 h-8 rounded-full bg-[#000000] text-white flex items-center justify-center flex-shrink-0 text-xs font-bold shadow-xs">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1B98F2] to-[#7928CA] text-white flex items-center justify-center flex-shrink-0 text-xs font-bold shadow-xs">
                   <Bot className="w-4 h-4" />
                 </div>
               )}
@@ -143,7 +149,7 @@ export const QAPage: React.FC<QAPageProps> = ({ currentLanguage, currentStyle })
               <div
                 className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-5 shadow-xs ${
                   m.role === 'user'
-                    ? 'bg-[#000000] text-white rounded-tr-none'
+                    ? 'bg-gradient-to-r from-[#1B98F2] to-[#1580CD] text-white rounded-tr-none'
                     : 'bg-white border border-[#E5E7EB] text-[#000000] rounded-tl-none'
                 }`}
               >
@@ -180,7 +186,7 @@ export const QAPage: React.FC<QAPageProps> = ({ currentLanguage, currentStyle })
 
         {isLoading && (
           <div className="flex items-start space-x-3.5">
-            <div className="w-8 h-8 rounded-full bg-[#000000] text-white flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1B98F2] to-[#7928CA] text-white flex items-center justify-center flex-shrink-0">
               <Loader2 className="w-4 h-4 animate-spin" />
             </div>
             <div className="bg-white border border-[#E5E7EB] rounded-2xl rounded-tl-none p-4 shadow-xs text-xs text-[#71717A] flex items-center space-x-2">
@@ -192,7 +198,7 @@ export const QAPage: React.FC<QAPageProps> = ({ currentLanguage, currentStyle })
       </div>
 
       {/* Input Form */}
-      <form onSubmit={handleSend} className="mt-4 relative flex items-center">
+      <form onSubmit={(e) => handleSend(undefined, e)} className="mt-4 relative flex items-center">
         <input
           type="text"
           value={inputQuestion}
@@ -204,7 +210,7 @@ export const QAPage: React.FC<QAPageProps> = ({ currentLanguage, currentStyle })
         <button
           type="submit"
           disabled={isLoading || !inputQuestion.trim()}
-          className="absolute right-1.5 p-2 rounded-full bg-[#000000] text-white hover:bg-zinc-800 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
+          className="absolute right-1.5 p-2 rounded-full bg-[#1B98F2] text-white hover:bg-[#1580CD] disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer shadow-xs"
         >
           <Send className="w-4 h-4" />
         </button>

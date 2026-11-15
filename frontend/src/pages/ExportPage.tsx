@@ -124,16 +124,16 @@ export const ExportPage: React.FC = () => {
           <button
             onClick={handleDownloadZip}
             disabled={isDownloadingZip}
-            className="serko-btn-black !text-sm !py-3.5 !px-8 flex items-center justify-center space-x-2 flex-shrink-0 disabled:opacity-50"
+            className="inline-flex items-center justify-center bg-gradient-to-r from-[#1B98F2] to-[#7928CA] hover:from-[#1580CD] hover:to-[#631EA8] text-white font-bold text-sm py-3.5 px-8 rounded-full shadow-md transition-all flex-shrink-0 disabled:opacity-50 cursor-pointer"
           >
             {isDownloadingZip ? (
               <>
-                <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                <RefreshCw className="w-4 h-4 animate-spin text-white mr-2" />
                 <span>ARCHIVING ASSETS...</span>
               </>
             ) : (
               <>
-                <Download className="w-4 h-4 text-white" />
+                <Download className="w-4 h-4 text-white mr-2" />
                 <span>DOWNLOAD ZIP BUNDLE</span>
               </>
             )}
@@ -151,7 +151,7 @@ export const ExportPage: React.FC = () => {
           {/* Card 1: Coverage Infographic */}
           <div className="bg-white rounded-2xl p-6 border border-[#E5E7EB] shadow-xs flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 rounded-xl bg-[#F6F6F6] border border-[#E5E7EB] text-[#000000] flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-[#F6F6F6] border border-[#E5E7EB] text-[#1B98F2] flex items-center justify-center">
                 <ImageIcon className="w-6 h-6" />
               </div>
               <div>
@@ -162,7 +162,7 @@ export const ExportPage: React.FC = () => {
             <a
               href={visuals.length > 0 ? apiClient.export.getImageUrl(visuals[0].image_id) : '/coverage_infographic_explainer.png'}
               download="Coverage_Infographic.png"
-              className="px-4 py-2 rounded-full bg-[#000000] hover:bg-zinc-800 text-white text-xs font-semibold transition-colors flex items-center space-x-1.5"
+              className="px-4 py-2 rounded-full bg-[#1B98F2] hover:bg-[#1580CD] text-white text-xs font-semibold transition-colors flex items-center space-x-1.5 shadow-2xs"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Download</span>
@@ -172,7 +172,7 @@ export const ExportPage: React.FC = () => {
           {/* Card 2: Claims Flowchart */}
           <div className="bg-white rounded-2xl p-6 border border-[#E5E7EB] shadow-xs flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 rounded-xl bg-[#F6F6F6] border border-[#E5E7EB] text-[#000000] flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-[#F6F6F6] border border-[#E5E7EB] text-[#1B98F2] flex items-center justify-center">
                 <ImageIcon className="w-6 h-6" />
               </div>
               <div>
@@ -183,7 +183,7 @@ export const ExportPage: React.FC = () => {
             <a
               href={visuals.length > 1 ? apiClient.export.getImageUrl(visuals[1].image_id) : '/claims_flowchart_explainer.png'}
               download="Claims_Flowchart.png"
-              className="px-4 py-2 rounded-full bg-[#000000] hover:bg-zinc-800 text-white text-xs font-semibold transition-colors flex items-center space-x-1.5"
+              className="px-4 py-2 rounded-full bg-[#1B98F2] hover:bg-[#1580CD] text-white text-xs font-semibold transition-colors flex items-center space-x-1.5 shadow-2xs"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Download</span>

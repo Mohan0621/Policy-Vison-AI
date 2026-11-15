@@ -110,7 +110,7 @@ export const ClaimsTimelineStepper: React.FC<ClaimsTimelineStepperProps> = ({ on
               onClick={() => handleSelect(idx)}
               className={`p-4 rounded-2xl border text-left transition-all relative flex flex-col justify-between ${
                 isActive
-                  ? 'border-[#000000] bg-[#FAFAFA] shadow-[0_4px_16px_rgba(0,0,0,0.06)] scale-[1.02]'
+                  ? 'border-[#1B98F2] bg-[#1B98F2]/5 shadow-[0_4px_16px_rgba(27,152,242,0.12)] scale-[1.02]'
                   : 'border-[#EBEBEB] bg-white hover:border-[#D4D4D8] hover:bg-[#FBFBFB]'
               }`}
             >
@@ -119,7 +119,7 @@ export const ClaimsTimelineStepper: React.FC<ClaimsTimelineStepperProps> = ({ on
                   <div
                     className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
                       isActive
-                        ? 'bg-[#000000] text-white'
+                        ? 'bg-[#1B98F2] text-white shadow-xs'
                         : isDone
                         ? 'bg-[#C0F2B5] text-[#17510B]'
                         : 'bg-[#F4F4F5] text-[#71717A]'

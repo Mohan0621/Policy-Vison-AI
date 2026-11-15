@@ -41,13 +41,17 @@ async def upload_pdf(request: Request, file: UploadFile = File(...)):
     file_bytes = await file.read()
     language   = request.query_params.get("language", "en")
 
-    # Mark as indexing immediately so frontend poll can start
+    # Mark as indexing immediately so frontend poll can start and clear old session artifacts
     session_manager.update_session(session_id, {
         "policy_document": {
             "filename": filename,
             "page_count": 0,
             "index_status": "indexing",
-        }
+        },
+        "visual_explainers": [],
+        "simplified_explanation": None,
+        "active_tasks": {},
+        "extracted_fields": None,
     })
 
     try:
@@ -118,6 +122,10 @@ async def submit_text(request: Request, body: TextInputRequest):
             "page_count": 0,
             "index_status": "indexing",
         },
+        "visual_explainers": [],
+        "simplified_explanation": None,
+        "active_tasks": {},
+        "extracted_fields": None,
     })
 
     try:

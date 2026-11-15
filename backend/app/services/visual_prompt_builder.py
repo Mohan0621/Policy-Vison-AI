@@ -10,6 +10,7 @@ from app.models import (
     TextOverlay,
     VisualStyle,
 )
+from app.services.multilingual_prompt_builder import LABEL_TRANSLATIONS
 
 STYLE_PROMPTS = {
     VisualStyle.PROFESSIONAL_INFOGRAPHIC: {
@@ -97,15 +98,16 @@ class VisualPromptBuilder:
         fields: PolicyFields,
         style: VisualStyle = VisualStyle.PROFESSIONAL_INFOGRAPHIC,
         language: str = "en",
+        visual_spec: Optional[Dict[str, Any]] = None,
     ) -> ImagePrompt:
         pos_style, neg_style = self._get_style_modifiers(style)
 
         # Extract or synthesize at least 3 categories with amounts
         categories = []
-        limits_text = fields.coverage_limits.value or ""
-        type_text = fields.coverage_type.value or "Hospitalization & Inpatient Care"
-        prem_text = fields.premium_details.value or ""
-        excl_text = fields.exclusions.value or ""
+        limits_text = str(fields.coverage_limits.value or "")
+        type_text = str(fields.coverage_type.value or "Hospitalization & Inpatient Care")
+        prem_text = str(fields.premium_details.value or "")
+        excl_text = str(fields.exclusions.value or "")
 
         # Extract numeric values
         numbers = re.findall(
@@ -133,30 +135,36 @@ class VisualPromptBuilder:
             f"{pos_style}{lang_directive}."
         )
 
+        lbl_dict = LABEL_TRANSLATIONS.get(language, LABEL_TRANSLATIONS["en"])
+        title_cov = lbl_dict.get("title_coverage", "POLICY COVERAGE OVERVIEW")
+        total_lbl = lbl_dict.get("total_cover", "Total Cover")
+        sub_lbl = lbl_dict.get("sub_limit", "Sub-limit")
+        add_lbl = lbl_dict.get("additional", "Additional")
+
         overlays = [
             TextOverlay(
-                text="POLICY COVERAGE OVERVIEW",
+                text=title_cov,
                 position=(80, 60),
                 font_size=42,
                 font_path=f"fonts/NotoSans-{language}.ttf",
                 color="#0F172A",
             ),
             TextOverlay(
-                text=f"Total Cover: {amt1}",
+                text=f"{total_lbl}: {amt1}",
                 position=(80, 150),
                 font_size=32,
                 font_path=f"fonts/NotoSans-{language}.ttf",
                 color="#2563EB",
             ),
             TextOverlay(
-                text=f"Sub-limit: {amt2}",
+                text=f"{sub_lbl}: {amt2}",
                 position=(80, 220),
                 font_size=28,
                 font_path=f"fonts/NotoSans-{language}.ttf",
                 color="#059669",
             ),
             TextOverlay(
-                text=f"Additional: {amt3}",
+                text=f"{add_lbl}: {amt3}",
                 position=(80, 280),
                 font_size=28,
                 font_path=f"fonts/NotoSans-{language}.ttf",
@@ -184,6 +192,7 @@ class VisualPromptBuilder:
 
         structured = {
             "type": "coverage",
+            "language": language,
             "title": type_text,
             "sum_insured": amt1,
             "sub_limit": amt2,
@@ -192,6 +201,19 @@ class VisualPromptBuilder:
             "premium_details": prem_text,
             "exclusions": excl_text,
         }
+        if visual_spec and isinstance(visual_spec, dict):
+            structured.update({
+                "custom_title": visual_spec.get("title"),
+                "custom_subtitle": visual_spec.get("subtitle"),
+                "custom_chips": visual_spec.get("chips"),
+                "custom_cards": visual_spec.get("cards"),
+            })
+            if visual_spec.get("sum_insured"):
+                structured["sum_insured"] = visual_spec["sum_insured"]
+            if visual_spec.get("sub_limit"):
+                structured["sub_limit"] = visual_spec["sub_limit"]
+            if visual_spec.get("additional"):
+                structured["additional"] = visual_spec["additional"]
 
         return ImagePrompt(
             prompt_text=prompt_text,
@@ -210,6 +232,7 @@ class VisualPromptBuilder:
         style: VisualStyle = VisualStyle.FLOWCHART_DIAGRAM,
         has_dual_path: bool = False,
         language: str = "en",
+        visual_spec: Optional[Dict[str, Any]] = None,
     ) -> ImagePrompt:
         pos_style, neg_style = self._get_style_modifiers(style)
         
@@ -239,9 +262,13 @@ class VisualPromptBuilder:
             f"Numbered step badges (01, 02, 03, 04) and status pills. {pos_style}{lang_directive}."
         )
 
+        lbl_dict = LABEL_TRANSLATIONS.get(language, LABEL_TRANSLATIONS["en"])
+        title_cl = lbl_dict.get("title_claims", "CLAIMS PROCEDURE FLOWCHART")
+        step_word = lbl_dict.get("step", "Step")
+
         overlays = [
             TextOverlay(
-                text="CLAIMS PROCEDURE FLOWCHART",
+                text=title_cl,
                 position=(80, 60),
                 font_size=40,
                 font_path=f"fonts/NotoSans-{language}.ttf",
@@ -251,9 +278,9 @@ class VisualPromptBuilder:
 
         y_offset = 150
         for s in sorted_steps[:6]:
-            lbl = f"Step {s.step_number}: {s.title}"
-            if s.path_label:
-                lbl = f"[{s.path_label.upper()}] {lbl}"
+            path_tag = lbl_dict.get(s.path_label, s.path_label.upper()) if s.path_label else ""
+            prefix = f"[{path_tag}] " if path_tag else ""
+            lbl = f"{prefix}{step_word} {s.step_number}: {s.title}"
             overlays.append(TextOverlay(
                 text=lbl[:60],
                 position=(80, y_offset),
@@ -272,7 +299,8 @@ class VisualPromptBuilder:
 
         structured = {
             "type": "claims",
-            "title": "CLAIMS PROCEDURE FLOWCHART",
+            "language": language,
+            "title": title_cl,
             "steps": [
                 {
                     "step_number": s.step_number,
@@ -284,6 +312,27 @@ class VisualPromptBuilder:
             ],
             "has_dual_path": has_dual_path or any(s.path_label for s in sorted_steps),
         }
+        if visual_spec and isinstance(visual_spec, dict):
+            dp = visual_spec.get("dual_path") if isinstance(visual_spec.get("dual_path"), dict) else {}
+            structured.update({
+                "custom_flowchart_title": visual_spec.get("flowchart_title"),
+                "custom_flowchart_subtitle": visual_spec.get("flowchart_subtitle"),
+                "has_dual_path": visual_spec.get("has_dual_path", True),
+                "custom_stages": visual_spec.get("stages") or [],
+                "custom_dual_path": dp,
+                "custom_final_stage": visual_spec.get("final_stage") or {},
+                "custom_stage1_title": visual_spec.get("stage1_title"),
+                "custom_stage1_desc1": visual_spec.get("stage1_desc1"),
+                "custom_stage1_desc2": visual_spec.get("stage1_desc2"),
+                "custom_stage2_title": visual_spec.get("stage2_title"),
+                "custom_stage2_desc1": visual_spec.get("stage2_desc1"),
+                "custom_stage2_desc2": visual_spec.get("stage2_desc2"),
+                "custom_steps_a": visual_spec.get("steps_a") or dp.get("steps_a"),
+                "custom_steps_b": visual_spec.get("steps_b") or dp.get("steps_b"),
+                "custom_stage4_title": visual_spec.get("stage4_title") or (visual_spec.get("final_stage", {}).get("title") if isinstance(visual_spec.get("final_stage"), dict) else None),
+                "custom_stage4_desc1": visual_spec.get("stage4_desc1") or (visual_spec.get("final_stage", {}).get("desc1") if isinstance(visual_spec.get("final_stage"), dict) else None),
+                "custom_stage4_desc2": visual_spec.get("stage4_desc2") or (visual_spec.get("final_stage", {}).get("desc2") if isinstance(visual_spec.get("final_stage"), dict) else None),
+            })
 
         return ImagePrompt(
             prompt_text=prompt_text,
@@ -306,6 +355,8 @@ class VisualPromptBuilder:
             return None
 
         pos_style, neg_style = self._get_style_modifiers(style)
+        lbl_dict = LABEL_TRANSLATIONS.get(language, LABEL_TRANSLATIONS["en"])
+        title_qa = lbl_dict.get("title_qa", "POLICY ANSWER BREAKDOWN")
         prompt_text = (
             f"Focused educational infographic illustrating policy query: {answer.text[:150]}. "
             f"Visual cards, numerical highlight badge, clarity diagrams. {pos_style}."
@@ -313,7 +364,7 @@ class VisualPromptBuilder:
 
         overlays = [
             TextOverlay(
-                text="POLICY ANSWER BREAKDOWN",
+                text=title_qa,
                 position=(80, 60),
                 font_size=38,
                 font_path=f"fonts/NotoSans-{language}.ttf",

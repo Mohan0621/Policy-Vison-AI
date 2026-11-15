@@ -142,7 +142,8 @@ async def generate_coverage_visual(request: Request, body: VisualRequest):
             tasks[task_id]["status"] = "running"
             passages = rag_pipeline.retrieve("coverage limits inpatient benefits", session_id=session_id, top_k=5, min_score=0.1)
             fields = llm_engine.extract_fields(passages)
-            prompt = prompt_builder.build_coverage_prompt(fields, style=body.style, language=body.language)
+            visual_spec = llm_engine.extract_visual_spec(passages, language=body.language, visual_type="coverage")
+            prompt = prompt_builder.build_coverage_prompt(fields, style=body.style, language=body.language, visual_spec=visual_spec)
             
             gen_img = image_generator.generate(prompt, session_id=session_id, visual_type="coverage")
             
@@ -199,7 +200,8 @@ async def generate_claims_visual(request: Request, body: VisualRequest):
             tasks[task_id]["status"] = "running"
             passages = rag_pipeline.retrieve("claim procedure cashless reimbursement", session_id=session_id, top_k=5, min_score=0.1)
             steps = llm_engine.extract_claim_steps(passages)
-            prompt = prompt_builder.build_claims_prompt(steps, style=body.style, has_dual_path=True, language=body.language)
+            visual_spec = llm_engine.extract_visual_spec(passages, language=body.language, visual_type="claims")
+            prompt = prompt_builder.build_claims_prompt(steps, style=body.style, has_dual_path=True, language=body.language, visual_spec=visual_spec)
             
             gen_img = image_generator.generate(prompt, session_id=session_id, visual_type="claims")
             

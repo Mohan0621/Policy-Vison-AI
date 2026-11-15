@@ -1,23 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, ArrowRight, RefreshCw, CheckCircle2, Layers, Download, Sparkles, ShieldCheck } from 'lucide-react';
-import { apiClient, SimplifiedExplanation, SourceCitation, VisualStyle } from '../api/client';
+import {
+  AlertTriangle, ArrowRight, RefreshCw, CheckCircle2,
+  Download, Sparkles, ShieldCheck, GitCommit, BookOpen
+} from 'lucide-react';
+import { apiClient, IndianLanguage, SimplifiedExplanation, SourceCitation, VisualStyle } from '../api/client';
+import { PolicyMetricsRibbon } from '../components/studio/PolicyMetricsRibbon';
+import { CanvasViewportToolbar } from '../components/studio/CanvasViewportToolbar';
+import { ClauseSnippetCard } from '../components/citations/ClauseSnippetCard';
+import { PolicyDiffSlider } from '../components/PolicyDiffSlider';
+import { ClaimsTimelineStepper } from '../components/ClaimsTimelineStepper';
 
 interface ViewerPageProps {
   currentLanguage: string;
   currentStyle: VisualStyle;
   onStyleChange: (newStyle: VisualStyle) => void;
+  onLanguageChange?: (lang: IndianLanguage) => void;
   onOpenCitationDrawer?: () => void;
 }
+
+type InspectorTab = 'summary' | 'citations' | 'workflow';
 
 export const ViewerPage: React.FC<ViewerPageProps> = ({
   currentLanguage,
   currentStyle,
   onStyleChange,
+  onLanguageChange,
   onOpenCitationDrawer,
 }) => {
   const [activeVisualTab, setActiveVisualTab] = useState<'coverage' | 'claims'>('coverage');
+  const [activeInspectorTab, setActiveInspectorTab] = useState<InspectorTab>('summary');
   const [explanation, setExplanation] = useState<SimplifiedExplanation | null>(null);
   const [visuals, setVisuals] = useState<Array<{ image_id: string; type: string; citations: SourceCitation[] }>>([]);
+  const [documentName, setDocumentName] = useState<string>('Policy Document');
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState<VisualStyle>(currentStyle);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -25,11 +39,16 @@ export const ViewerPage: React.FC<ViewerPageProps> = ({
   const [missingVisualType, setMissingVisualType] = useState<'coverage' | 'claims' | null>(null);
   const [imageError, setImageError] = useState(false);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState<number>(100);
+  const [isCompareMode, setIsCompareMode] = useState<boolean>(false);
 
   const fetchSessionData = async () => {
     try {
       const sess = await apiClient.session.get();
       if (sess.success && sess.data) {
+        if (sess.data.policy_document?.filename) {
+          setDocumentName(sess.data.policy_document.filename);
+        }
         if (sess.data.simplified_explanation) {
           setExplanation(sess.data.simplified_explanation);
         }
@@ -65,7 +84,18 @@ export const ViewerPage: React.FC<ViewerPageProps> = ({
     fetchSessionData();
   }, []);
 
-  const activeVisual = visuals.find((v) => v.type === activeVisualTab) || visuals[0];
+  const matchingVisuals = visuals.filter((v) => v.type === activeVisualTab);
+  const activeVisual = matchingVisuals.length > 0 ? matchingVisuals[matchingVisuals.length - 1] : null;
+
+  // Poll for visual completion if currently missing
+  useEffect(() => {
+    if (!activeVisual) {
+      const pollTimer = setInterval(() => {
+        fetchSessionData();
+      }, 1500);
+      return () => clearInterval(pollTimer);
+    }
+  }, [activeVisual, activeVisualTab]);
 
   const handleRegenerateSpecific = async (targetType: 'coverage' | 'claims') => {
     setIsRegenerating(true);
@@ -135,31 +165,61 @@ export const ViewerPage: React.FC<ViewerPageProps> = ({
     }
   };
 
+  const handleLanguageSwitch = async (newLang: IndianLanguage) => {
+    if (onLanguageChange) {
+      onLanguageChange(newLang);
+    }
+    setIsRegenerating(true);
+    setErrorMsg(null);
+    try {
+      const covRes = await apiClient.generate.coverageVisual(selectedStyle, newLang);
+      await apiClient.generate.claimsVisual(selectedStyle, newLang);
+      if (covRes.success && covRes.data) {
+        let attempts = 0;
+        const poll = setInterval(async () => {
+          attempts++;
+          const st = await apiClient.generate.getTaskStatus(covRes.data!.task_id);
+          if (st.success && st.data?.status === 'complete') {
+            clearInterval(poll);
+            setIsRegenerating(false);
+            fetchSessionData();
+          } else if (attempts > 30 || st.data?.status === 'failed') {
+            clearInterval(poll);
+            setIsRegenerating(false);
+          }
+        }, 1000);
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Language regeneration failed.');
+      setIsRegenerating(false);
+    }
+  };
+
   const currentImageUrl = activeVisual && !imageError
     ? apiClient.export.getImageUrl(activeVisual.image_id)
-    : activeVisualTab === 'claims'
-    ? '/claims_flowchart_explainer.png'
-    : '/coverage_infographic_explainer.png';
+    : undefined;
+
+  const currentCitations = activeVisual?.citations || explanation?.source_citations || [];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 sm:py-12 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-8 space-y-6">
       {/* Studio Header Bar */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-[#E5E7EB] pb-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#E5E7EB] pb-5">
         <div>
-          <div className="inline-flex items-center gap-2 text-xs font-bold text-[#17510B] border border-[#C0F2B5] rounded-full px-3.5 py-1 bg-[#C0F2B5]/40 mb-3 shadow-xs">
-            <Sparkles size={13} className="text-[#17510B]" />
-            <span>VISUAL EXPLORATION CANVAS</span>
+          <div className="inline-flex items-center gap-2 text-[11px] font-bold text-[#17510B] border border-[#C0F2B5] rounded-full px-3 py-0.5 bg-[#C0F2B5]/40 mb-2 shadow-2xs">
+            <Sparkles size={12} className="text-[#17510B]" />
+            <span>POLICY WORKBENCH • MULTILINGUAL STUDIO</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-[#000000] tracking-tight">
-            Policy Visual Explainer
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#000000] tracking-tight">
+            Policy Visual Explainer & Inspector
           </h1>
-          <p className="text-sm text-[#71717A] mt-1">
-            Crystal-clear visual synthesis with sentence-level document grounding & zero hallucinations.
+          <p className="text-xs sm:text-sm text-[#71717A] mt-0.5">
+            Active document: <span className="font-semibold text-[#111827]">{documentName}</span> • 150 DPI print-ready canvas
           </p>
         </div>
 
-        {/* Style Switcher Pills (Serko Pill Track) */}
-        <div className="flex items-center space-x-1 bg-[#F6F6F6] p-1 rounded-full border border-[#E5E7EB] shadow-inner">
+        {/* Style Switcher Pills */}
+        <div className="flex items-center space-x-1 bg-[#F6F6F6] p-1 rounded-full border border-[#E5E7EB] shadow-inner shrink-0">
           {(
             [
               { id: 'professional_infographic', label: 'Infographic' },
@@ -171,10 +231,10 @@ export const ViewerPage: React.FC<ViewerPageProps> = ({
               key={s.id}
               onClick={() => handleFullStyleChange(s.id)}
               disabled={isRegenerating}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+              className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
                 selectedStyle === s.id
-                  ? 'bg-[#000000] text-white shadow-sm'
-                  : 'text-[#71717A] hover:text-[#000000]'
+                  ? 'bg-[#1B98F2] text-white shadow-xs'
+                  : 'text-[#71717A] hover:text-[#09090B]'
               }`}
             >
               {s.label}
@@ -185,18 +245,18 @@ export const ViewerPage: React.FC<ViewerPageProps> = ({
 
       {/* REQ-11.3: Partial Session Restore Recovery Banner */}
       {partialFailureNotice && (
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-800 shadow-sm">
+        <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-800 shadow-sm">
           <div className="flex items-center space-x-2.5">
-            <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />
+            <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
             <span>{partialFailureNotice}</span>
           </div>
           {missingVisualType && (
             <button
               onClick={() => handleRegenerateSpecific(missingVisualType)}
               disabled={isRegenerating}
-              className="serko-btn-black !text-xs !py-1.5 !px-3 flex items-center space-x-1.5"
+              className="px-3 py-1 rounded-full bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] shrink-0 transition-colors flex items-center space-x-1"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isRegenerating ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3 h-3 ${isRegenerating ? 'animate-spin' : ''}`} />
               <span>Regenerate {missingVisualType} Visual</span>
             </button>
           )}
@@ -204,26 +264,33 @@ export const ViewerPage: React.FC<ViewerPageProps> = ({
       )}
 
       {errorMsg && (
-        <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-center space-x-3 text-xs text-rose-700 shadow-sm">
-          <AlertTriangle className="w-5 h-5 text-rose-500 flex-shrink-0" />
+        <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-center space-x-2.5 text-xs text-rose-700 shadow-sm">
+          <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
 
-      {/* Main Grid: Visual Canvas & Grounding Citations HUD */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left 8 Cols: Gallery Canvas Viewport */}
-        <div className="lg:col-span-8 space-y-4">
-          <div className="bg-white rounded-3xl p-6 border border-[#E5E7EB] shadow-sm relative overflow-hidden">
-            {/* Viewport Header */}
-            <div className="flex items-center justify-between mb-4">
+      {/* Component 1: Quick Metrics Ribbon */}
+      <PolicyMetricsRibbon
+        documentName={documentName}
+        explanation={explanation}
+        citations={currentCitations}
+      />
+
+      {/* Main Studio Split-Pane Workbench Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column (7 of 12 cols): Interactive Visual Viewport */}
+        <div className="lg:col-span-7 space-y-3">
+          <div className="bg-white rounded-3xl p-5 border border-[#E5E7EB] shadow-sm space-y-3">
+            {/* Viewport Header Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center space-x-1 bg-[#F6F6F6] p-1 rounded-full border border-[#E5E7EB]">
                 <button
                   onClick={() => setActiveVisualTab('coverage')}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
                     activeVisualTab === 'coverage'
-                      ? 'bg-[#000000] text-white shadow-sm'
-                      : 'text-[#71717A] hover:text-[#000000]'
+                      ? 'bg-white text-[#09090B] shadow-2xs font-bold border border-[#E5E7EB]'
+                      : 'text-[#71717A] hover:text-[#09090B]'
                   }`}
                 >
                   Policy Coverage Infographic
@@ -232,205 +299,209 @@ export const ViewerPage: React.FC<ViewerPageProps> = ({
                   onClick={() => setActiveVisualTab('claims')}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
                     activeVisualTab === 'claims'
-                      ? 'bg-[#000000] text-white shadow-sm'
-                      : 'text-[#71717A] hover:text-[#000000]'
+                      ? 'bg-white text-[#09090B] shadow-2xs font-bold border border-[#E5E7EB]'
+                      : 'text-[#71717A] hover:text-[#09090B]'
                   }`}
                 >
                   Cashless Claims Process
                 </button>
               </div>
 
-              <div className="flex items-center space-x-3">
-                <span className="text-[11px] font-semibold text-[#71717A] bg-[#F6F6F6] border border-[#E5E7EB] px-3 py-1 rounded-full">
-                  1024 × 1024 PX • 150 DPI
-                </span>
-                <a
-                  href={currentImageUrl}
-                  download="PolicyVision_Infographic.png"
-                  className="text-xs text-[#000000] hover:text-[#1B98F2] font-bold flex items-center space-x-1.5 transition-colors"
-                >
-                  <Download className="w-4 h-4" />
-                  <span className="hidden sm:inline">EXPORT</span>
-                </a>
-              </div>
+              <span className="text-[11px] font-semibold text-[#71717A] bg-[#F6F6F6] border border-[#E5E7EB] px-2.5 py-1 rounded-full">
+                1024 × 1024 PX • 150 DPI
+              </span>
             </div>
 
-            {/* Canvas Frame */}
+            {/* Component 2: Interactive Canvas Toolbar */}
+            <CanvasViewportToolbar
+              zoomLevel={zoomLevel}
+              onZoomChange={setZoomLevel}
+              onResetZoom={() => setZoomLevel(100)}
+              currentLanguage={currentLanguage}
+              onLanguageChange={handleLanguageSwitch}
+              onOpenLightbox={() => setIsZoomOpen(true)}
+              onExport={() => {
+                if (currentImageUrl) {
+                  const a = document.createElement('a');
+                  a.href = currentImageUrl;
+                  a.download = activeVisualTab === 'claims' ? 'Claims_Flowchart.png' : 'Coverage_Infographic.png';
+                  a.click();
+                }
+              }}
+              isCompareMode={isCompareMode}
+              onToggleCompare={() => setIsCompareMode(!isCompareMode)}
+              isRegenerating={isRegenerating}
+            />
+
+            {/* Canvas Viewport Frame */}
             <div
-              onClick={() => setIsZoomOpen(true)}
-              className="relative aspect-square w-full bg-[#FAFAFA] rounded-2xl overflow-hidden flex items-center justify-center border border-[#E5E7EB] shadow-inner group cursor-pointer"
-              title="Click to view full-resolution 1024×1024 print visual"
+              className="relative aspect-square w-full bg-[#FAFAFA] rounded-2xl overflow-hidden flex items-center justify-center border border-[#E5E7EB] shadow-inner"
             >
-              {isRegenerating ? (
-                <div className="text-center p-8">
-                  <RefreshCw className="w-10 h-10 text-[#1B98F2] animate-spin mx-auto mb-3" />
-                  <p className="text-xs font-bold text-[#52525B] uppercase tracking-wider">
-                    Synthesizing Visual Layout...
+              {isCompareMode ? (
+                <div className="w-full h-full p-4 overflow-y-auto">
+                  <PolicyDiffSlider />
+                </div>
+              ) : isRegenerating || !currentImageUrl ? (
+                <div className="text-center p-8 space-y-3">
+                  <RefreshCw className="w-10 h-10 text-[#1B98F2] animate-spin mx-auto mb-2" />
+                  <p className="text-sm font-bold text-[#000000]">
+                    Synthesizing Custom Visual Layout...
+                  </p>
+                  <p className="text-xs text-[#71717A] max-w-sm mx-auto">
+                    Extracting grounded policy clauses and rendering 1024×1024 canvas with zero hallucinations.
                   </p>
                 </div>
               ) : (
-                <>
+                <div
+                  className="w-full h-full flex items-center justify-center cursor-zoom-in overflow-hidden"
+                  onClick={() => setIsZoomOpen(true)}
+                  title="Click to inspect 1024×1024 high-res view"
+                >
                   <img
                     src={currentImageUrl}
                     alt="Visual Policy Explainer"
-                    className="w-full h-full object-contain hover:scale-[1.015] transition-transform duration-300"
+                    style={{
+                      transform: `scale(${zoomLevel / 100})`,
+                      transformOrigin: 'center center',
+                      transition: 'transform 0.2s ease-out',
+                    }}
+                    className="max-w-full max-h-full object-contain"
                     onError={() => {
                       setImageError(true);
                     }}
                   />
-                  <div className="absolute bottom-4 right-4 bg-[#000000]/80 hover:bg-[#000000] text-white text-[11px] font-semibold px-3.5 py-1.5 rounded-full flex items-center gap-1.5 backdrop-blur-sm shadow-md transition-all">
-                    <span>Inspect 1024×1024 (150 DPI)</span>
-                    <ArrowRight className="w-3.5 h-3.5 -rotate-45" />
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Right 4 Cols: Grounding Passages HUD (REQ-12.2) */}
-        <div className="lg:col-span-4">
-          <div className="bg-white rounded-3xl p-6 border border-[#E5E7EB] shadow-sm h-full flex flex-col">
-            <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-4 mb-4">
-              <div className="flex items-center space-x-2">
-                <Layers className="w-5 h-5 text-[#1B98F2]" />
-                <h3 className="font-bold text-[#000000] text-base tracking-tight">
-                  Document Citations
-                </h3>
-              </div>
-              <span className="text-[11px] font-bold text-[#17510B] bg-[#C0F2B5] border border-[#BBF7D0] px-2.5 py-0.5 rounded-full">
-                100% Grounded
-              </span>
-            </div>
-
-            {onOpenCitationDrawer && (
-              <button
-                onClick={onOpenCitationDrawer}
-                className="w-full mb-3.5 py-2 px-3 rounded-xl bg-[#E8F3FE] hover:bg-[#D6EBFE] text-[#1B98F2] border border-[#1B98F2]/30 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
-              >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Open IRDAI Clause Citation Drawer</span>
-              </button>
-            )}
-
-            <p className="text-xs text-[#71717A] mb-4 leading-relaxed">
-              Every section, sub-limit & procedure rendered on this visual is verified against official policy passages:
-            </p>
-
-            <div className="flex-1 overflow-y-auto space-y-3 pr-1 max-h-[580px]">
-              {(activeVisual?.citations || explanation?.source_citations || []).length > 0 ? (
-                (activeVisual?.citations || explanation?.source_citations || []).map((c, i) => (
-                  <div
-                    key={i}
-                    className="p-4 rounded-2xl bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1B98F2] transition-all space-y-2 shadow-[0_4px_16px_rgba(0,0,0,0.03)]"
-                  >
-                    <div className="flex items-center justify-between text-xs font-bold">
-                      <span className="px-2.5 py-0.5 rounded-full bg-[#F6F6F6] border border-[#E5E7EB] text-[#000000]">
-                        {c.section_heading} • Page {c.page_number}
-                      </span>
-                      <span className="text-[11px] font-semibold text-[#158142]">
-                        {(c.relevance_score * 100).toFixed(0)}% MATCH
-                      </span>
-                    </div>
-                    <blockquote className="text-xs text-[#52525B] italic border-l-2 border-[#1B98F2] pl-3 py-0.5 line-clamp-3">
-                      "{c.passage_text}"
-                    </blockquote>
-                  </div>
-                ))
-              ) : (
-                <div className="space-y-3">
-                  <div className="p-4 rounded-2xl bg-[#FFFFFF] border border-[#E5E7EB] space-y-2 shadow-[0_4px_16px_rgba(0,0,0,0.03)]">
-                    <div className="flex items-center justify-between text-xs font-bold">
-                      <span className="px-2.5 py-0.5 rounded-full bg-[#F6F6F6] border border-[#E5E7EB] text-[#000000]">
-                        Section 3.1 • Page 4
-                      </span>
-                      <span className="text-[11px] font-semibold text-[#158142]">96% MATCH</span>
-                    </div>
-                    <blockquote className="text-xs text-[#52525B] italic border-l-2 border-[#1B98F2] pl-3 py-0.5">
-                      "Inpatient hospitalization expenses including room rent, nursing, ICU, surgeon fees covered up to Sum Insured."
-                    </blockquote>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-[#FFFFFF] border border-[#E5E7EB] space-y-2 shadow-[0_4px_16px_rgba(0,0,0,0.03)]">
-                    <div className="flex items-center justify-between text-xs font-bold">
-                      <span className="px-2.5 py-0.5 rounded-full bg-[#F6F6F6] border border-[#E5E7EB] text-[#000000]">
-                        Section 4.2 • Page 9
-                      </span>
-                      <span className="text-[11px] font-semibold text-[#158142]">94% MATCH</span>
-                    </div>
-                    <blockquote className="text-xs text-[#52525B] italic border-l-2 border-[#1B98F2] pl-3 py-0.5">
-                      "Initial waiting period of thirty (30) days from policy inception date applies except for accidental injury."
-                    </blockquote>
+                  <div className="absolute bottom-3 right-3 bg-white/95 hover:bg-white text-[#09090B] border border-[#E5E7EB] text-[10px] font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 backdrop-blur-sm shadow-md transition-all">
+                    <span>Inspect 1024×1024</span>
+                    <ArrowRight className="w-3 h-3 -rotate-45" />
                   </div>
                 </div>
               )}
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Simplified Explanation Three-Section Invariant (REQ-4.4, Property 3) */}
-      <div className="bg-white rounded-3xl p-8 border border-[#E5E7EB] shadow-sm space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E5E7EB] pb-4">
-          <div>
-            <div className="text-xs font-bold text-[#1B98F2] uppercase tracking-wider mb-1">
-              Plain-Language Synthesis
+        {/* Right Column (5 of 12 cols): Studio Inspector Hub */}
+        <div className="lg:col-span-5 space-y-3">
+          <div className="bg-white rounded-3xl p-5 border border-[#E5E7EB] shadow-sm space-y-4">
+            {/* Inspector Navigation Tabs */}
+            <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-3">
+              <div className="flex items-center space-x-1 bg-[#F6F6F6] p-1 rounded-full border border-[#E5E7EB]">
+                <button
+                  onClick={() => setActiveInspectorTab('summary')}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                    activeInspectorTab === 'summary'
+                      ? 'bg-white text-[#000000] shadow-2xs font-bold'
+                      : 'text-[#71717A] hover:text-[#000000]'
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5 text-[#1B98F2]" />
+                  <span>Summary</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveInspectorTab('citations')}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                    activeInspectorTab === 'citations'
+                      ? 'bg-white text-[#000000] shadow-2xs font-bold'
+                      : 'text-[#71717A] hover:text-[#000000]'
+                  }`}
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#16A34A]" />
+                  <span>Citations ({currentCitations.length})</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveInspectorTab('workflow')}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                    activeInspectorTab === 'workflow'
+                      ? 'bg-white text-[#000000] shadow-2xs font-bold'
+                      : 'text-[#71717A] hover:text-[#000000]'
+                  }`}
+                >
+                  <GitCommit className="w-3.5 h-3.5 text-[#7C3AED]" />
+                  <span>Workflow</span>
+                </button>
+              </div>
+
+              {activeInspectorTab === 'summary' && explanation && (
+                <span className="text-[10px] font-bold text-[#166534] bg-[#DCFCE7] border border-[#BBF7D0] px-2 py-0.5 rounded-full">
+                  Grade {explanation.fk_grade_level || '6.8'}
+                </span>
+              )}
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-[#000000] tracking-tight">
-              Cognitive Policy Summary
-            </h2>
-          </div>
-          <div className="flex items-center space-x-3">
-            <span className="text-xs bg-[#C0F2B5] text-[#17510B] border border-[#BBF7D0] px-3.5 py-1.5 rounded-full font-bold">
-              FLESCH-KINCAID GRADE: {explanation?.fk_grade_level || '6.8'} (TARGET ≤ 8)
-            </span>
-            {explanation?.fallback_language && (
-              <span className="text-xs bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1.5 rounded-full font-semibold">
-                FALLBACK: EN
-              </span>
+
+            {/* Inspector Tab 1: Plain-Language 3-Point Summary */}
+            {activeInspectorTab === 'summary' && (
+              <div className="space-y-3.5 max-h-[580px] overflow-y-auto pr-1">
+                {/* 1. What is Covered */}
+                <div className="p-4 rounded-2xl bg-[#F0FDF4] border border-[#BBF7D0] space-y-2">
+                  <div className="flex items-center space-x-1.5 text-[#166534] text-xs font-bold tracking-wider uppercase">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#16A34A]" />
+                    <span>1. What is Covered</span>
+                  </div>
+                  <p className="text-xs text-[#14532D] leading-relaxed">
+                    {explanation?.what_is_covered ||
+                      'Comprehensive inpatient hospitalization including room rent, ICU, surgeon charges, operation theater, diagnostic tests, plus 60 days pre and 90 days post hospitalization care.'}
+                  </p>
+                </div>
+
+                {/* 2. What is Not Covered */}
+                <div className="p-4 rounded-2xl bg-[#FEF2F2] border border-[#FECACA] space-y-2">
+                  <div className="flex items-center space-x-1.5 text-[#991B1B] text-xs font-bold tracking-wider uppercase">
+                    <AlertTriangle className="w-3.5 h-3.5 text-[#DC2626]" />
+                    <span>2. What is Not Covered</span>
+                  </div>
+                  <p className="text-xs text-[#7F1D1D] leading-relaxed">
+                    {explanation?.what_is_not_covered ||
+                      'Pre-existing illnesses during initial waiting period, cosmetic treatments, non-prescription supplements, maternity expenses (unless rider included), and unproven experimental therapies.'}
+                  </p>
+                </div>
+
+                {/* 3. How to Claim */}
+                <div className="p-4 rounded-2xl bg-[#EFF6FF] border border-[#BFDBFE] space-y-2">
+                  <div className="flex items-center space-x-1.5 text-[#1E40AF] text-xs font-bold tracking-wider uppercase">
+                    <ArrowRight className="w-3.5 h-3.5 text-[#2563EB]" />
+                    <span>3. How to Claim</span>
+                  </div>
+                  <p className="text-xs text-[#1E3A8A] leading-relaxed">
+                    {explanation?.how_to_claim ||
+                      'Cashless: Notify insurer within 24 hours of emergency admission and present e-health card at network hospital TPA desk. Reimbursement: Settle hospital bills directly and submit signed claim dossier within 30 days.'}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Inspector Tab 2: Grounded Citations (ClauseSnippetCard) */}
+            {activeInspectorTab === 'citations' && (
+              <div className="space-y-3 max-h-[580px] overflow-y-auto pr-1">
+                {currentCitations.length === 0 ? (
+                  <p className="text-xs text-[#71717A] text-center py-8">
+                    No citation passages returned for this view.
+                  </p>
+                ) : (
+                  currentCitations.map((c, i) => (
+                    <ClauseSnippetCard
+                      key={i}
+                      citation={c}
+                      index={i}
+                      onOpenDrawer={onOpenCitationDrawer}
+                    />
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* Inspector Tab 3: Claims Workflow Stepper */}
+            {activeInspectorTab === 'workflow' && (
+              <div className="max-h-[580px] overflow-y-auto pr-1">
+                <ClaimsTimelineStepper />
+              </div>
             )}
           </div>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* 1. What is Covered */}
-          <div className="p-6 rounded-2xl bg-[#F0FDF4] border border-[#BBF7D0] space-y-3">
-            <div className="flex items-center space-x-2 text-[#166534] text-xs font-bold uppercase tracking-wider">
-              <CheckCircle2 className="w-4 h-4 text-[#16A34A]" />
-              <span>1. WHAT IS COVERED</span>
-            </div>
-            <p className="text-xs sm:text-sm text-[#14532D] leading-relaxed font-normal">
-              {explanation?.what_is_covered ||
-                'Full inpatient hospitalization (ICU, room rent, surgeon fees), 60 days pre-admission and 90 days post-discharge medical care, plus road ambulance emergency transport up to ₹3,000.'}
-            </p>
-          </div>
-
-          {/* 2. What is Not Covered */}
-          <div className="p-6 rounded-2xl bg-[#FEF2F2] border border-[#FECACA] space-y-3">
-            <div className="flex items-center space-x-2 text-[#991B1B] text-xs font-bold uppercase tracking-wider">
-              <AlertTriangle className="w-4 h-4 text-[#DC2626]" />
-              <span>2. WHAT IS NOT COVERED</span>
-            </div>
-            <p className="text-xs sm:text-sm text-[#7F1D1D] leading-relaxed font-normal">
-              {explanation?.what_is_not_covered ||
-                'Pre-existing diseases (PED) for first 36 months, initial 30-day non-accidental waiting period, cosmetic surgeries, non-prescribed therapies, and routine dental/vision outpatient checkups.'}
-            </p>
-          </div>
-
-          {/* 3. How to Claim */}
-          <div className="p-6 rounded-2xl bg-[#EFF6FF] border border-[#BFDBFE] space-y-3">
-            <div className="flex items-center space-x-2 text-[#1E40AF] text-xs font-bold uppercase tracking-wider">
-              <ArrowRight className="w-4 h-4 text-[#2563EB]" />
-              <span>3. HOW TO CLAIM</span>
-            </div>
-            <p className="text-xs sm:text-sm text-[#1E3A8A] leading-relaxed font-normal">
-              {explanation?.how_to_claim ||
-                'Notify insurer within 24 hours for emergency or 48 hours before planned admission. Present e-health card at network hospital TPA desk. TPA approves cashless settlement directly.'}
-            </p>
-          </div>
-        </div>
       </div>
 
-      {/* Lightbox Modal for 1024×1024 Inspection */}
+      {/* Lightbox Modal for 1024×1024 High-Resolution Inspection */}
       {isZoomOpen && (
         <div
           onClick={() => setIsZoomOpen(false)}
@@ -438,7 +509,7 @@ export const ViewerPage: React.FC<ViewerPageProps> = ({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-3xl p-4 sm:p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl space-y-4 cursor-default"
+            className="bg-white rounded-3xl p-4 sm:p-6 max-w-4xl w-full max-h-[92vh] overflow-y-auto shadow-2xl space-y-4 cursor-default"
           >
             <div className="flex items-center justify-between pb-3 border-b border-[#E5E7EB]">
               <div className="flex items-center gap-2">
@@ -449,7 +520,7 @@ export const ViewerPage: React.FC<ViewerPageProps> = ({
               </div>
               <div className="flex items-center gap-2">
                 <a
-                  href={currentImageUrl}
+                  href={currentImageUrl || '#'}
                   download={activeVisualTab === 'claims' ? 'Claims_Flowchart.png' : 'Coverage_Infographic.png'}
                   className="ds-btn-primary !text-xs !py-1.5 !px-3"
                 >
@@ -466,9 +537,9 @@ export const ViewerPage: React.FC<ViewerPageProps> = ({
             </div>
             <div className="w-full flex items-center justify-center bg-[#FAFAFA] rounded-2xl overflow-hidden border border-[#E5E7EB]">
               <img
-                src={currentImageUrl}
+                src={currentImageUrl || undefined}
                 alt="High resolution explainer"
-                className="max-h-[70vh] w-auto object-contain rounded-xl"
+                className="max-h-[72vh] w-auto object-contain rounded-xl"
               />
             </div>
           </div>

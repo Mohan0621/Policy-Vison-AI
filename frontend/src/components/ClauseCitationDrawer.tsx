@@ -126,8 +126,8 @@ export const ClauseCitationDrawer: React.FC<ClauseCitationDrawerProps> = ({
               onClick={() => setActiveId(item.id)}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
                 activeId === item.id
-                  ? 'bg-[#000000] text-white shadow-sm'
-                  : 'bg-[#F6F6F6] text-[#71717A] hover:text-[#000000]'
+                  ? 'bg-[#1B98F2] text-white shadow-sm'
+                  : 'bg-[#F6F6F6] text-[#71717A] hover:text-[#09090B]'
               }`}
             >
               {item.clauseTitle.split(' ')[0]} {item.clauseTitle.split(' ')[1]}
@@ -218,7 +218,7 @@ export const ClauseCitationDrawer: React.FC<ClauseCitationDrawerProps> = ({
           </button>
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 px-4 rounded-full bg-[#000000] text-white text-xs font-semibold hover:bg-black/90 transition-all text-center shadow-sm"
+            className="flex-1 py-2.5 px-4 rounded-full bg-[#1B98F2] text-white text-xs font-semibold hover:bg-[#1580CD] transition-all text-center shadow-sm cursor-pointer"
           >
             Done Inspecting
           </button>

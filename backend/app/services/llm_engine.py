@@ -69,7 +69,9 @@ class LLMEngine:
         self._init_model()
 
     def _init_model(self):
-        if self.backend == "llama_cpp":
+        if self.backend == "groq" or settings.GROQ_API_KEY:
+            logger.info("Configured Groq backend with model %s", settings.GROQ_MODEL)
+        elif self.backend == "llama_cpp":
             try:
                 from llama_cpp import Llama
                 if os.path.exists(self.model_path):
@@ -87,6 +89,54 @@ class LLMEngine:
             except Exception as e:
                 logger.warning("Failed to initialize transformers pipeline (%s). Using heuristic fallback.", str(e))
 
+    def _call_groq(
+        self,
+        messages: List[dict],
+        max_tokens: int = 1024,
+        temperature: float = 0.1,
+        json_mode: bool = False,
+    ) -> Optional[str]:
+        """Calls Groq ultra-fast LLM API with automatic model fallback."""
+        api_key = settings.GROQ_API_KEY
+        if not api_key:
+            return None
+
+        models_to_try = [settings.GROQ_MODEL, "qwen/qwen3.8-27b", "openai/gpt-oss-120b", "openai/gpt-oss-20b"]
+        seen = set()
+        models = [m for m in models_to_try if m and not (m in seen or seen.add(m))]
+
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        }
+        for model in models:
+            payload = {
+                "model": model,
+                "messages": messages,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+            }
+            if json_mode:
+                payload["response_format"] = {"type": "json_object"}
+            try:
+                import httpx
+                resp = httpx.post(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers=headers,
+                    json=payload,
+                    timeout=20.0,
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    content = data["choices"][0]["message"]["content"]
+                    if content:
+                        return content
+                else:
+                    logger.warning("Groq model %s returned HTTP %d: %s", model, resp.status_code, resp.text[:150])
+            except Exception as e:
+                logger.warning("Groq call failed for model %s: %s", model, str(e))
+        return None
+
     def _extract_numbers(self, text: str) -> List[str]:
         """Extracts numeric patterns including currencies, percentages, and periods."""
         patterns = [
@@ -103,7 +153,44 @@ class LLMEngine:
         return list(dict.fromkeys(results))
 
     def _extract_fields_worker(self, passages: List[RetrievedPassage]) -> PolicyFields:
-        # If neural LLM model is loaded, use structured JSON extraction
+        # 1. Try Groq ultra-fast extraction if configured
+        if (self.backend == "groq" or settings.GROQ_API_KEY) and passages:
+            try:
+                passages_summary = "\n".join([f"Passage: {p.text}" for p in passages[:4]])
+                prompt = (
+                    "Extract insurance policy details from the passages below into strict JSON format.\n"
+                    "Keys required: coverage_type, coverage_limits, premium_details, exclusions, claim_procedures.\n"
+                    "If a field is missing, set its value to null.\n\n"
+                    f"Passages:\n{passages_summary}\n\nJSON Output:"
+                )
+                groq_resp = self._call_groq([
+                    {"role": "system", "content": "You are an insurance policy data extractor. Output valid JSON only, without markdown fences."},
+                    {"role": "user", "content": prompt},
+                ], json_mode=True)
+                if groq_resp:
+                    json_match = re.search(r"\{.*\}", groq_resp, re.DOTALL)
+                    if json_match:
+                        parsed = json.loads(json_match.group(0))
+                        all_ids = [p.chunk_id for p in passages]
+                        def _to_str(val):
+                            if val is None:
+                                return None
+                            if isinstance(val, dict):
+                                return ", ".join(f"{k}: {v}" for k, v in val.items())
+                            if isinstance(val, list):
+                                return ", ".join(str(x) for x in val)
+                            return str(val)
+                        return PolicyFields(
+                            coverage_type=PolicyField(value=_to_str(parsed.get("coverage_type")), status="found" if parsed.get("coverage_type") else "not_found", source_passage_ids=all_ids),
+                            coverage_limits=PolicyField(value=_to_str(parsed.get("coverage_limits")), status="found" if parsed.get("coverage_limits") else "not_found", source_passage_ids=all_ids),
+                            premium_details=PolicyField(value=_to_str(parsed.get("premium_details")), status="found" if parsed.get("premium_details") else "not_found", source_passage_ids=all_ids),
+                            exclusions=PolicyField(value=_to_str(parsed.get("exclusions")), status="found" if parsed.get("exclusions") else "not_found", source_passage_ids=all_ids),
+                            claim_procedures=PolicyField(value=_to_str(parsed.get("claim_procedures")), status="found" if parsed.get("claim_procedures") else "not_found", source_passage_ids=all_ids),
+                        )
+            except Exception as e:
+                logger.warning("Groq field extraction failed (%s). Using heuristic extraction.", str(e))
+
+        # 2. If neural LLM model is loaded, use structured JSON extraction
         if self._model and passages:
             try:
                 passages_summary = "\n".join([f"Passage: {p.text}" for p in passages[:4]])
@@ -569,6 +656,29 @@ class LLMEngine:
 
         answer_text = f"Based on {passages[0].document_name} ({passages[0].section_heading}): {top_passage.strip()}"
 
+        # If Groq is available, generate an intelligent, grounded conversational answer
+        if (self.backend == "groq" or settings.GROQ_API_KEY) and passages:
+            try:
+                context = "\n\n".join([f"Passage {i+1} ({p.section_heading}): {p.text}" for i, p in enumerate(passages[:4])])
+                groq_answer = self._call_groq([
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are an expert insurance intelligence assistant for PolicyVision AI. "
+                            "Answer the user's question clearly, professionally, and concisely using only the provided policy passages. "
+                            "Explicitly cite the relevant section or clause where applicable."
+                        ),
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Policy Passages:\n{context}\n\nUser Question: {question}\n\nAccurate Grounded Answer:",
+                    },
+                ], max_tokens=512)
+                if groq_answer and len(groq_answer.strip()) > 10:
+                    answer_text = groq_answer.strip()
+            except Exception as e:
+                logger.warning("Groq QA answer generation failed (%s). Falling back to passage text.", str(e))
+
         return QAAnswer(
             text=answer_text,
             is_visual_needed=is_visual,
@@ -634,4 +744,127 @@ class LLMEngine:
             ]
 
         return steps
+
+    def extract_visual_spec(
+        self,
+        passages: List[RetrievedPassage],
+        language: str = "en",
+        visual_type: str = "coverage",
+    ) -> Optional[dict]:
+        """
+        Dynamically extracts structured visual explainer parameters tailored to ANY uploaded policy using Groq.
+        Extracts customized title, subtitle, metric chips, cards, or claims steps in the target language.
+        Returns None if Groq is unavailable or extraction fails, allowing graceful template fallback.
+        """
+        if not (self.backend == "groq" or settings.GROQ_API_KEY) or not passages:
+            return None
+
+        from app.utils.language_utils import LANGUAGE_NAMES
+        lang_name = LANGUAGE_NAMES.get(language, "English")
+        passages_text = "\n\n".join([f"Passage {i+1}: {p.text}" for i, p in enumerate(passages[:5])])
+
+        if visual_type == "claims":
+            prompt = (
+                f"You are an insurance visual designer for PolicyVision AI. "
+                f"Extract the dynamic, real-world claim procedure stages for this policy from the passages below. "
+                f"Do not force exactly 4 stages if the policy specifies fewer (e.g. 3) or more (e.g. 5 or 6). "
+                f"Determine whether this policy has a dual-path workflow (Cashless Network Hospital vs Reimbursement Non-network) or a single sequential linear flow. "
+                f"You MUST generate all titles, descriptions, and steps in {lang_name} ({language}) script. "
+                f"Return STRICT JSON only without markdown formatting:\n"
+                f"{{\n"
+                f'  "flowchart_title": "Claims procedure title in {lang_name}",\n'
+                f'  "flowchart_subtitle": "Step-by-step workflow guide in {lang_name}",\n'
+                f'  "has_dual_path": true,\n'
+                f'  "stages": [\n'
+                f'    {{"stage_number": 1, "title": "Stage 1 title in {lang_name}", "badge": "Short badge in {lang_name}", "desc1": "Notice requirement in {lang_name}", "desc2": "Timeline in {lang_name}"}},\n'
+                f'    {{"stage_number": 2, "title": "Stage 2 title in {lang_name}", "badge": "Short badge in {lang_name}", "desc1": "Document requirement in {lang_name}", "desc2": "Desk submission in {lang_name}"}}\n'
+                f'  ],\n'
+                f'  "dual_path": {{\n'
+                f'    "question": "Is Network Hospital? in {lang_name}",\n'
+                f'    "path_a_title": "Path A: Cashless in {lang_name}",\n'
+                f'    "path_a_badge": "Cashless Badge in {lang_name}",\n'
+                f'    "steps_a": [\n'
+                f'      "1. Cashless step 1 in {lang_name}",\n'
+                f'      "2. Cashless step 2 in {lang_name}",\n'
+                f'      "3. Cashless step 3 in {lang_name}",\n'
+                f'      "4. Cashless step 4 in {lang_name}"\n'
+                f'    ],\n'
+                f'    "path_b_title": "Path B: Reimbursement in {lang_name}",\n'
+                f'    "path_b_badge": "Reimbursement Badge in {lang_name}",\n'
+                f'    "steps_b": [\n'
+                f'      "1. Reimbursement step 1 in {lang_name}",\n'
+                f'      "2. Reimbursement step 2 in {lang_name}",\n'
+                f'      "3. Reimbursement step 3 in {lang_name}",\n'
+                f'      "4. Reimbursement step 4 in {lang_name}"\n'
+                f'    ]\n'
+                f'  }},\n'
+                f'  "final_stage": {{\n'
+                f'    "stage_number": 4,\n'
+                f'    "title": "Final Settlement & Payout title in {lang_name}",\n'
+                f'    "badge": "IRDAI 30-Day TAT",\n'
+                f'    "desc1": "Turnaround time and settlement terms in {lang_name}",\n'
+                f'    "desc2": "Electronic transfer or notification rule in {lang_name}"\n'
+                f'  }}\n'
+                f"}}\n\n"
+                f"Policy Passages:\n{passages_text}"
+            )
+        else:
+            prompt = (
+                f"You are an insurance visual designer for PolicyVision AI. "
+                f"Extract structured visual explainer data from the policy passages below. "
+                f"You MUST generate all titles, subtitles, chips, and card descriptions in {lang_name} ({language}) script. "
+                f"Amounts should retain currency symbols (e.g. ₹ or Rs.). "
+                f"Return STRICT JSON only without markdown formatting:\n"
+                f"{{\n"
+                f'  "title": "Exact policy product name in {lang_name}",\n'
+                f'  "subtitle": "Short visual explainer subtitle in {lang_name}",\n'
+                f'  "sum_insured": "Primary sum insured amount from policy",\n'
+                f'  "sub_limit": "Room rent / ICU sub-limits summary",\n'
+                f'  "additional": "Waiting period / co-pay summary",\n'
+                f'  "chips": [\n'
+                f'    {{"label": "Highlight 1 (e.g. cashless hospital count)", "sub": "Short subtitle in {lang_name}"}},\n'
+                f'    {{"label": "Highlight 2 (e.g. co-payment % or zero co-pay)", "sub": "Short subtitle in {lang_name}"}},\n'
+                f'    {{"label": "Highlight 3 (e.g. waiting periods)", "sub": "Short subtitle in {lang_name}"}}\n'
+                f'  ],\n'
+                f'  "cards": [\n'
+                f'    {{"title": "Card 1 Inpatient Sum Insured title in {lang_name}", "amount": "Amount", "desc": "Inpatient coverage terms in {lang_name}"}},\n'
+                f'    {{"title": "Card 2 Room Rent & ICU sub-limits title in {lang_name}", "amount": "Amount", "desc": "Room rent and ICU rules in {lang_name}"}},\n'
+                f'    {{"title": "Card 3 Co-payment & Waiting periods title in {lang_name}", "amount": "Amount", "desc": "Co-pay and waiting terms in {lang_name}"}}\n'
+                f'  ]\n'
+                f"}}\n\n"
+                f"Policy Passages:\n{passages_text}"
+            )
+
+        try:
+            resp_str = self._call_groq([
+                {"role": "system", "content": "You are an Indic insurance visual assistant. Output valid JSON only, without markdown fences."},
+                {"role": "user", "content": prompt},
+            ], max_tokens=2048, json_mode=True)
+            if resp_str:
+                json_match = re.search(r"\{.*\}", resp_str, re.DOTALL)
+                if json_match:
+                    spec = json.loads(json_match.group(0))
+                    if isinstance(spec, dict):
+                        # Ensure compatibility bridge for stages
+                        if "dual_path" in spec and isinstance(spec["dual_path"], dict):
+                            dp = spec["dual_path"]
+                            spec.setdefault("steps_a", dp.get("steps_a", []))
+                            spec.setdefault("steps_b", dp.get("steps_b", []))
+                        if "final_stage" in spec and isinstance(spec["final_stage"], dict):
+                            fs = spec["final_stage"]
+                            spec.setdefault("stage4_title", fs.get("title"))
+                            spec.setdefault("stage4_desc1", fs.get("desc1"))
+                            spec.setdefault("stage4_desc2", fs.get("desc2"))
+                        if "stages" in spec and isinstance(spec["stages"], list) and len(spec["stages"]) > 0:
+                            spec.setdefault("stage1_title", spec["stages"][0].get("title"))
+                            spec.setdefault("stage1_desc1", spec["stages"][0].get("desc1"))
+                            spec.setdefault("stage1_desc2", spec["stages"][0].get("desc2"))
+                            if len(spec["stages"]) > 1:
+                                spec.setdefault("stage2_title", spec["stages"][1].get("title"))
+                                spec.setdefault("stage2_desc1", spec["stages"][1].get("desc1"))
+                                spec.setdefault("stage2_desc2", spec["stages"][1].get("desc2"))
+                        return spec
+        except Exception as e:
+            logger.warning("Groq visual spec extraction failed (%s). Falling back to template.", str(e))
+        return None
 

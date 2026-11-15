@@ -77,8 +77,11 @@ Thumbs.db
 desktop.ini
 .DS_Store
 
-# Temporary Root Scratch Images
+# Temporary Root Scratch Images & Scripts
 /flux_*.png
 /beautiful_policy_explainer.png
 /clean_policy_infographic.png
 unslop/
+scratch/
+*.env*
+backend/.env

@@ -42,7 +42,7 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
             onClick={onBackToWebsite}
             className="flex items-center space-x-2 cursor-pointer group"
           >
-            <div className="w-7 h-7 rounded-lg bg-[#000000] text-white flex items-center justify-center font-bold text-xs group-hover:scale-105 transition-transform">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#1B98F2] to-[#7928CA] text-white flex items-center justify-center font-bold text-xs group-hover:scale-105 transition-transform shadow-xs">
               <Shield className="w-3.5 h-3.5 text-white fill-white" />
             </div>
             <span className="text-sm font-bold text-[#000000] tracking-tight hidden sm:inline">
