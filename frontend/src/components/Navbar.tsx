@@ -43,18 +43,16 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 pointer-events-none">
       <div
-        className={`mx-auto px-4 sm:px-6 transition-all duration-300 pointer-events-auto ${
-          scrolled
+        className={`mx-auto px-4 sm:px-6 transition-all duration-300 pointer-events-auto ${scrolled
             ? 'max-w-4xl pt-3'
             : 'max-w-7xl pt-4'
-        }`}
+          }`}
       >
         <div
-          className={`flex items-center justify-between px-4 sm:px-6 py-2.5 rounded-full transition-all duration-300 ${
-            scrolled
+          className={`flex items-center justify-between px-4 sm:px-6 py-2.5 rounded-full transition-all duration-300 ${scrolled
               ? 'bg-white/95 backdrop-blur-md shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-black/[0.08]'
               : 'bg-transparent border border-transparent'
-          }`}
+            }`}
         >
           {/* Left: Editorial Navigation Links (Home, Platform, For teams, About) */}
           <nav className="flex items-center space-x-1 sm:space-x-2">
@@ -65,11 +63,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onNavigatePage(item.id);
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
-                className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors ${
-                  currentPage === item.id
+                className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors ${currentPage === item.id
                     ? 'text-[#000000] font-semibold bg-white/60 sm:bg-transparent'
                     : 'text-[#52525B] hover:text-[#000000]'
-                }`}
+                  }`}
               >
                 {item.label}
               </button>

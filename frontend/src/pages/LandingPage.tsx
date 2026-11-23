@@ -55,7 +55,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     if (isCardsHovered) return;
     const timer = setInterval(() => {
       setHeroIdx((prev) => (prev + 1) % heroStates.length);
-    }, 4500);
+    }, 8000);
     return () => clearInterval(timer);
   }, [isCardsHovered, heroStates.length]);
 
@@ -165,10 +165,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           onMouseLeave={() => setIsCardsHovered(false)}
           className="relative z-10 w-full max-w-3xl mx-auto px-4 mt-6 space-y-3.5"
         >
-          {/* Pinned Geographic Telemetry Capsule (Matches San Francisco pin in Photo 2) */}
-          <div className="absolute -top-14 left-4 sm:left-12 z-20 flex items-center gap-2 bg-[#09090B] text-white px-3.5 py-1.5 rounded-full shadow-[0_6px_20px_rgba(0,0,0,0.25)] border border-white/20 text-xs font-semibold animate-float-slow hover:scale-105 transition-transform cursor-pointer">
-            <span className="w-2 h-2 rounded-full bg-[#1B98F2] animate-ping" />
-            <span>New Delhi (IRDAI Desk)</span>
+          {/* Pinned Geographic Telemetry Capsule with stem & pinpoint (Exact match with San Francisco pin in Photo 2) */}
+          <div className="absolute -top-16 left-4 sm:left-12 z-20 flex flex-col items-center pointer-events-auto">
+            <div className="flex items-center gap-2 bg-[#09090B] text-white px-3.5 py-1.5 rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.3)] border border-white/20 text-xs font-semibold animate-float-slow hover:scale-105 transition-transform cursor-pointer">
+              <span className="w-2 h-2 rounded-full bg-[#1B98F2] animate-ping" />
+              <span>New Delhi (IRDAI Desk)</span>
+            </div>
+            {/* Serko Vertical Pin Stem */}
+            <div className="w-[1.5px] h-5 bg-[#09090B]" />
+            {/* Globe Anchor Ring */}
+            <div className="w-2.5 h-2.5 rounded-full border-2 border-[#09090B] bg-white flex items-center justify-center shadow-xs">
+              <div className="w-1 h-1 rounded-full bg-[#09090B]" />
+            </div>
           </div>
 
           {/* 1. Top Floating Card: Right Offset (Matches Marriott Marquis in Photo 2) */}
@@ -251,13 +259,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
           <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
 
-          <div className="animate-marquee flex items-center gap-8 whitespace-nowrap py-1">
+          <div className="animate-marquee flex items-center gap-6 whitespace-nowrap py-1">
             {[...marqueeItems, ...marqueeItems, ...marqueeItems, ...marqueeItems].map((item, idx) => (
               <span
                 key={idx}
-                className="text-xs sm:text-sm font-medium text-[#71717A] hover:text-[#000000] hover:bg-[#F4F4F5] px-3.5 py-1.5 rounded-full transition-colors cursor-pointer shrink-0"
+                className="inline-flex items-center gap-2.5 text-xs sm:text-sm font-medium text-[#71717A] hover:text-[#000000] hover:bg-[#F4F4F5] px-3.5 py-1.5 rounded-full transition-colors cursor-pointer shrink-0"
               >
-                {item}
+                <span className="w-1.5 h-1.5 rounded-full bg-[#1B98F2]/70 shrink-0" />
+                <span>{item}</span>
               </span>
             ))}
           </div>
