@@ -97,6 +97,15 @@
   }
 }
 
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
 .animate-float-slow {
   animation: float-slow 4.5s ease-in-out infinite;
 }
@@ -107,6 +116,16 @@
 
 .animate-pulse-ring {
   animation: pulse-ring 2.4s ease-in-out infinite;
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 26s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
 }
 
 /* ── Serko Horizon Aura Backgrounds ── */
