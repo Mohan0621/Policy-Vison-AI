@@ -49,13 +49,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   ];
 
   const [heroIdx, setHeroIdx] = useState(0);
+  const [isCardsHovered, setIsCardsHovered] = useState(false);
+  const [isTestingEngine, setIsTestingEngine] = useState(false);
 
   useEffect(() => {
+    if (isCardsHovered || isTestingEngine) return;
     const timer = setInterval(() => {
       setHeroIdx((prev) => (prev + 1) % heroStates.length);
     }, 4500);
     return () => clearInterval(timer);
-  }, [heroStates.length]);
+  }, [isCardsHovered, isTestingEngine, heroStates.length]);
+
+  const handleTestEngineClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsTestingEngine(true);
+    setTimeout(() => {
+      setHeroIdx((prev) => (prev + 1) % heroStates.length);
+      setIsTestingEngine(false);
+    }, 900);
+  };
 
   const activeHero = heroStates[heroIdx];
 
@@ -168,13 +180,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <div className="w-full h-16 sm:h-24" />
 
         {/* ── Layered Hero Profile Showcase Widget (Matches AgentOps buildHeroInteractiveCard) ── */}
-        <div className="relative z-10 w-full max-w-4xl mx-auto px-2 mt-4">
+        <div
+          onMouseEnter={() => setIsCardsHovered(true)}
+          onMouseLeave={() => setIsCardsHovered(false)}
+          className="relative z-10 w-full max-w-4xl mx-auto px-2 mt-4"
+        >
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 lg:gap-6">
             {/* 1. Left Flanking Floating Chip: Flowchart Mode */}
             <div
               onClick={() => setHeroIdx(1)}
-              className={`w-full sm:w-[220px] bg-white rounded-2xl border p-3.5 shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all cursor-pointer transform hover:-translate-y-1 ${
-                heroIdx === 1 ? 'border-[#1B98F2] ring-2 ring-[#1B98F2]/20 shadow-[0_12px_28px_rgba(27,152,242,0.15)]' : 'border-black/[0.06] hover:border-[#1B98F2]/40'
+              className={`w-full sm:w-[220px] bg-white rounded-2xl border p-3.5 shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-300 cursor-pointer animate-float-slow hover:![animation-play-state:paused] hover:-translate-y-2.5 hover:scale-[1.03] hover:shadow-[0_22px_45px_rgba(27,152,242,0.18)] ${
+                heroIdx === 1 ? 'border-[#1B98F2] ring-2 ring-[#1B98F2]/30 shadow-[0_14px_32px_rgba(27,152,242,0.2)]' : 'border-black/[0.08] hover:border-[#1B98F2]/60'
               }`}
             >
               <div className="flex items-center justify-between text-[#000000]">
@@ -198,7 +214,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* 2. Center Serko Layered Profile Widget (#F6F6F6 container) */}
-            <div className="w-full sm:w-[430px] bg-[#F6F6F6] rounded-[22px] border border-black/[0.06] p-3.5 shadow-[0_14px_38px_rgba(0,0,0,0.10)] hover:border-[#1B98F2]/30 transition-all">
+            <div className="w-full sm:w-[430px] bg-[#F6F6F6] rounded-[22px] border border-black/[0.08] p-3.5 shadow-[0_14px_38px_rgba(0,0,0,0.10)] hover:shadow-[0_24px_55px_rgba(0,0,0,0.14)] hover:-translate-y-1 hover:border-[#1B98F2]/40 transition-all duration-300">
               {/* Top White Prompt Choice Bar */}
               <div
                 onClick={() => setHeroIdx((prev) => (prev + 1) % heroStates.length)}
@@ -220,12 +236,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
 
               {/* Middle Interactive Visual Preview Snippet */}
-              <div className="mt-2.5 bg-white rounded-xl p-2.5 border border-black/[0.04] flex items-center gap-3">
+              <div className="mt-2.5 bg-white rounded-xl p-2.5 border border-black/[0.04] flex items-center gap-3 group/img cursor-pointer" onClick={() => setHeroIdx((prev) => (prev + 1) % heroStates.length)}>
                 <div className="w-14 h-14 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] overflow-hidden shrink-0 flex items-center justify-center relative">
                   <img
                     src={heroIdx === 1 ? '/claims_flowchart_explainer.png' : '/coverage_infographic_explainer.png'}
                     alt="Visual Explainer Preview"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = '/clean_policy_infographic.png';
                     }}
@@ -260,23 +276,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       PolicyVision Generator
                     </p>
                     <p className="text-[10.5px] text-[#71717A]">
-                      Diffusion Active · 1024² 150 DPI · 10x Speed
+                      {isTestingEngine ? 'Synthesizing 1024² 150 DPI...' : 'Diffusion Active · 1024² 150 DPI · 10x Speed'}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#17510B] bg-[#C0F2B5] px-2.5 py-1 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#17510B]" />
-                  <span>Ready</span>
-                </div>
+                <button
+                  onClick={handleTestEngineClick}
+                  className="flex items-center gap-1.5 text-[11px] font-semibold text-[#17510B] bg-[#C0F2B5] hover:bg-[#A6EFA0] px-3 py-1 rounded-full cursor-pointer transition-all active:scale-95 shadow-2xs hover:shadow-xs"
+                  title="Click to test live diffusion engine cycle"
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full bg-[#17510B] ${isTestingEngine ? 'animate-ping' : ''}`} />
+                  <span>{isTestingEngine ? 'Rendering...' : 'Live Test ⚡'}</span>
+                </button>
               </div>
             </div>
 
             {/* 3. Right Flanking Floating Chip: Coverage Mode */}
             <div
               onClick={() => setHeroIdx(0)}
-              className={`w-full sm:w-[240px] bg-white rounded-2xl border p-3.5 shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all cursor-pointer transform hover:-translate-y-1 ${
-                heroIdx === 0 ? 'border-[#16A34A] ring-2 ring-[#16A34A]/20 shadow-[0_12px_28px_rgba(22,163,74,0.15)]' : 'border-black/[0.06] hover:border-[#16A34A]/40'
+              className={`w-full sm:w-[240px] bg-white rounded-2xl border p-3.5 shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-300 cursor-pointer animate-float-slow-reverse hover:![animation-play-state:paused] hover:-translate-y-2.5 hover:scale-[1.03] hover:shadow-[0_22px_45px_rgba(22,163,74,0.18)] ${
+                heroIdx === 0 ? 'border-[#16A34A] ring-2 ring-[#16A34A]/30 shadow-[0_14px_32px_rgba(22,163,74,0.2)]' : 'border-black/[0.08] hover:border-[#16A34A]/60'
               }`}
             >
               <div className="flex items-center justify-between">
