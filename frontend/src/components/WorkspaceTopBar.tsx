@@ -37,7 +37,7 @@ export const WorkspaceTopBar: React.FC<WorkspaceTopBarProps> = ({
   const TabIcon = currentTab.icon;
 
   return (
-    <header className="h-14 bg-white border-b border-[#E5E7EB] px-4 sm:px-6 flex items-center justify-between shrink-0 z-20">
+    <header className="h-14 bg-white border-b border-[#EAEAEA] px-4 sm:px-6 flex items-center justify-between shrink-0 z-20 select-none">
       {/* Left: Mobile Toggle + Breadcrumb */}
       <div className="flex items-center space-x-3 min-w-0">
         {onToggleMobile && (
@@ -52,14 +52,14 @@ export const WorkspaceTopBar: React.FC<WorkspaceTopBarProps> = ({
         <div className="flex items-center space-x-2 text-xs">
           <span className="text-[#71717A] font-medium hidden sm:inline">Studio</span>
           <span className="text-[#D4D4D8] hidden sm:inline">/</span>
-          <div className="flex items-center space-x-1.5 font-bold text-[#000000]">
-            <TabIcon className="w-3.5 h-3.5 text-[#1B98F2]" />
+          <div className="flex items-center space-x-1.5 font-semibold text-[#09090B]">
+            <TabIcon className="w-3.5 h-3.5 text-[#18181B]" />
             <span className="truncate">{currentTab.title}</span>
           </div>
         </div>
 
         {documentName && (
-          <div className="hidden lg:flex items-center space-x-2 pl-3 border-l border-[#E5E7EB]">
+          <div className="hidden lg:flex items-center space-x-2 pl-3 border-l border-[#EAEAEA]">
             <span className="w-1.5 h-1.5 rounded-full bg-[#158142]" />
             <span className="text-xs font-mono text-[#52525B] truncate max-w-[200px]" title={documentName}>
               {documentName}
@@ -74,7 +74,7 @@ export const WorkspaceTopBar: React.FC<WorkspaceTopBarProps> = ({
         {onOpenCommandPalette && (
           <button
             onClick={onOpenCommandPalette}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F4F4F5] hover:bg-[#E4E4E7] text-[#71717A] hover:text-[#000000] border border-[#E4E4E7] text-xs transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F4F4F5] hover:bg-[#E4E4E7] text-[#71717A] hover:text-[#000000] border border-[#E4E4E7] text-xs transition-colors cursor-pointer"
             title="Search Actions (⌘K)"
           >
             <Search className="w-3.5 h-3.5" />
@@ -85,28 +85,33 @@ export const WorkspaceTopBar: React.FC<WorkspaceTopBarProps> = ({
           </button>
         )}
 
+        {/* Live Diffusion Badge (AgentOps positive-mint) */}
+        <div className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#C0F2B5] text-[#17510B] text-xs font-semibold shadow-2xs">
+          <Check className="w-3 h-3 text-[#17510B]" />
+          <span>Diffusion 150 DPI</span>
+        </div>
+
         {/* Citation trigger pill */}
         {onOpenCitationDrawer && (
           <button
             onClick={onOpenCitationDrawer}
-            className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-[#158142] border border-emerald-200 text-xs font-medium hover:bg-emerald-100 transition-colors"
+            className="hidden md:flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#F4F4F5] hover:bg-[#E4E4E7] text-[#52525B] hover:text-[#000000] border border-[#E4E4E7] text-xs font-medium transition-colors cursor-pointer"
           >
-            <Check className="w-3 h-3" />
-            <span>IRDAI Citations</span>
+            <span>Citations</span>
           </button>
         )}
 
         {/* Language Indicator */}
         <div className="hidden md:flex items-center space-x-1 px-2.5 py-1 rounded-full bg-[#F4F4F5] border border-[#E4E4E7] text-xs font-medium text-[#52525B]">
-          <Globe className="w-3 h-3 text-[#1B98F2]" />
-          <span className="uppercase text-[11px] font-mono">{selectedLanguage}</span>
+          <Globe className="w-3 h-3 text-[#71717A]" />
+          <span className="uppercase text-[11px] font-mono font-bold">{selectedLanguage}</span>
         </div>
 
         {/* New Policy reset button */}
         {documentName && onNewSession && (
           <button
             onClick={onNewSession}
-            className="px-2.5 py-1 rounded-full text-xs font-semibold text-[#52525B] hover:text-[#000000] hover:bg-[#F4F4F5] border border-[#E5E7EB] transition-colors flex items-center gap-1"
+            className="px-2.5 py-1 rounded-full text-xs font-medium text-[#52525B] hover:text-[#000000] hover:bg-[#F4F4F5] border border-[#E4E4E7] transition-colors flex items-center gap-1 cursor-pointer"
           >
             <Plus className="w-3 h-3" />
             <span className="hidden sm:inline">New Policy</span>
@@ -116,7 +121,7 @@ export const WorkspaceTopBar: React.FC<WorkspaceTopBarProps> = ({
         {/* Website Link */}
         <button
           onClick={onBackToWebsite}
-          className="px-2.5 py-1 rounded-full text-xs font-semibold text-[#52525B] hover:text-[#000000] hover:bg-[#F4F4F5] border border-[#E5E7EB] transition-colors flex items-center gap-1"
+          className="px-2.5 py-1 rounded-full text-xs font-medium text-[#52525B] hover:text-[#000000] hover:bg-[#F4F4F5] border border-[#E4E4E7] transition-colors flex items-center gap-1 cursor-pointer"
         >
           <ArrowLeft className="w-3 h-3" />
           <span className="hidden sm:inline">Website</span>

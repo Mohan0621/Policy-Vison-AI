@@ -218,7 +218,7 @@ export const ViewerPage: React.FC<ViewerPageProps> = ({
           </p>
         </div>
 
-        {/* Style Switcher Pills */}
+        {/* Style Switcher Pills (AgentOps Segmented Pill Track) */}
         <div className="flex items-center space-x-1 bg-[#F6F6F6] p-1 rounded-full border border-[#E5E7EB] shadow-inner shrink-0">
           {(
             [
@@ -231,10 +231,10 @@ export const ViewerPage: React.FC<ViewerPageProps> = ({
               key={s.id}
               onClick={() => handleFullStyleChange(s.id)}
               disabled={isRegenerating}
-              className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+              className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                 selectedStyle === s.id
-                  ? 'bg-[#1B98F2] text-white shadow-xs'
-                  : 'text-[#71717A] hover:text-[#09090B]'
+                  ? 'bg-white text-[#000000] shadow-[0_2px_8px_rgba(0,0,0,0.08)]'
+                  : 'text-[#71717A] hover:text-[#000000]'
               }`}
             >
               {s.label}
@@ -370,9 +370,9 @@ export const ViewerPage: React.FC<ViewerPageProps> = ({
                       setImageError(true);
                     }}
                   />
-                  <div className="absolute bottom-3 right-3 bg-white/95 hover:bg-white text-[#09090B] border border-[#E5E7EB] text-[10px] font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 backdrop-blur-sm shadow-md transition-all">
+                  <div className="absolute bottom-3 right-3 bg-[#000000] text-white text-[10px] font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 shadow-md transition-all">
                     <span>Inspect 1024×1024</span>
-                    <ArrowRight className="w-3 h-3 -rotate-45" />
+                    <ArrowRight className="w-3 h-3 -rotate-45 text-white" />
                   </div>
                 </div>
               )}

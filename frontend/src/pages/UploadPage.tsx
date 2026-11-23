@@ -204,22 +204,20 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onSuccess }) => {
         <div className="flex items-center space-x-1 p-1 bg-[#F4F4F5] rounded-full border border-[#E4E4E7] shadow-inner shrink-0">
           <button
             onClick={() => setActiveMode('pdf')}
-            className={`py-1.5 px-4 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
-              activeMode === 'pdf'
+            className={`py-1.5 px-4 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${activeMode === 'pdf'
                 ? 'bg-white text-[#09090B] shadow-xs'
                 : 'text-[#71717A] hover:text-[#09090B]'
-            }`}
+              }`}
           >
             <UploadCloud className="w-3.5 h-3.5" />
             <span>PDF Document</span>
           </button>
           <button
             onClick={() => setActiveMode('text')}
-            className={`py-1.5 px-4 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
-              activeMode === 'text'
+            className={`py-1.5 px-4 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${activeMode === 'text'
                 ? 'bg-white text-[#09090B] shadow-xs'
                 : 'text-[#71717A] hover:text-[#09090B]'
-            }`}
+              }`}
           >
             <FileText className="w-3.5 h-3.5" />
             <span>Text Excerpt</span>
@@ -271,11 +269,10 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onSuccess }) => {
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={handleFileDrop}
                   onClick={() => document.getElementById('pdf-file-input')?.click()}
-                  className={`bg-white rounded-2xl p-6 sm:p-8 text-center cursor-pointer border-2 border-dashed transition-all shadow-xs group relative ${
-                    selectedFile
+                  className={`bg-white rounded-2xl p-6 sm:p-8 text-center cursor-pointer border-2 border-dashed transition-all shadow-xs group relative ${selectedFile
                       ? 'border-[#158142] bg-emerald-50/20'
                       : 'border-[#E4E4E7] hover:border-[#1B98F2] hover:bg-[#F8FAFC]'
-                  }`}
+                    }`}
                 >
                   <input
                     id="pdf-file-input"
@@ -345,7 +342,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onSuccess }) => {
                         <button
                           type="button"
                           onClick={() => loadSamplePolicy('Care_Optima_Health_Insurance_Policy.pdf', 'Care Optima')}
-                          className="flex-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-[#1B98F2] hover:bg-[#1580CD] text-white transition-colors shadow-2xs"
+                          className="flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#000000] hover:bg-[#242424] text-white transition-all shadow-xs cursor-pointer"
                         >
                           Load Sample
                         </button>
@@ -374,7 +371,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onSuccess }) => {
                         <button
                           type="button"
                           onClick={() => loadSamplePolicy('Star_Comprehensive_Family_Health_Policy.pdf', 'Star Comprehensive')}
-                          className="flex-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-[#1B98F2] hover:bg-[#1580CD] text-white transition-colors shadow-2xs"
+                          className="flex-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#000000] hover:bg-[#242424] text-white transition-all shadow-xs cursor-pointer"
                         >
                           Load Sample
                         </button>
@@ -441,11 +438,10 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onSuccess }) => {
                       key={lang.code}
                       type="button"
                       onClick={() => setSelectedLanguage(lang.code)}
-                      className={`p-2.5 rounded-xl border text-left transition-all ${
-                        isSelected
-                          ? 'border-[#1B98F2] bg-[#1B98F2]/10 text-[#09090B] shadow-2xs ring-1 ring-[#1B98F2]'
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${isSelected
+                          ? 'border-[#DBEAFE] bg-[#EFF6FF] text-[#09090B] shadow-2xs ring-1 ring-[#1B98F2]'
                           : 'border-[#E4E4E7] bg-white hover:bg-[#F8FAFC] text-[#3F3F46]'
-                      }`}
+                        }`}
                     >
                       <div className="font-bold text-xs">{lang.native}</div>
                       <div className={`text-[10px] ${isSelected ? 'text-[#1B98F2] font-semibold' : 'text-[#71717A]'}`}>
@@ -475,20 +471,18 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onSuccess }) => {
                       key={st.id}
                       type="button"
                       onClick={() => setSelectedStyle(st.id)}
-                      className={`w-full p-3 rounded-xl border text-left transition-all flex items-start justify-between gap-2 ${
-                        isSelected
-                          ? 'border-[#1B98F2] bg-[#1B98F2]/5 text-[#09090B] shadow-2xs ring-1 ring-[#1B98F2]'
+                      className={`w-full p-3 rounded-xl border text-left transition-all flex items-start justify-between gap-2 cursor-pointer ${isSelected
+                          ? 'border-[#DBEAFE] bg-[#EFF6FF] text-[#09090B] shadow-2xs ring-1 ring-[#1B98F2]'
                           : 'border-[#E4E4E7] bg-white hover:bg-[#F8FAFC] text-[#3F3F46]'
-                      }`}
+                        }`}
                     >
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-xs text-[#09090B]">
                             {st.name}
                           </span>
-                          <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold ${
-                            isSelected ? 'bg-[#1B98F2] text-white' : 'bg-zinc-100 text-zinc-600'
-                          }`}>
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold ${isSelected ? 'bg-[#000000] text-white' : 'bg-zinc-100 text-zinc-600'
+                            }`}>
                             {st.badge}
                           </span>
                         </div>
@@ -524,11 +518,11 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onSuccess }) => {
               <button
                 onClick={handleSubmit}
                 disabled={loading || !isFormValid}
-                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#1B98F2] to-[#7928CA] hover:from-[#1580CD] hover:to-[#631EA8] text-white font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 transition-all shadow-md disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
+                className="serko-btn-black w-full !text-sm !py-3.5 !px-6 flex items-center justify-center space-x-2 transition-all shadow-sm disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
               >
-                <Sparkles className="w-4 h-4" />
+                <Sparkles className="w-4 h-4 text-white" />
                 <span>Orchestrate Visual Synthesis</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 text-white" />
               </button>
             </div>
           </div>

@@ -141,17 +141,16 @@ export const QAPage: React.FC<QAPageProps> = ({ currentLanguage, currentStyle })
               className={`flex items-start space-x-3.5 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {m.role === 'assistant' && (
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1B98F2] to-[#7928CA] text-white flex items-center justify-center flex-shrink-0 text-xs font-bold shadow-xs">
+                <div className="w-8 h-8 rounded-full bg-[#000000] text-white flex items-center justify-center flex-shrink-0 text-xs font-bold shadow-xs">
                   <Bot className="w-4 h-4" />
                 </div>
               )}
 
               <div
-                className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-5 shadow-xs ${
-                  m.role === 'user'
-                    ? 'bg-gradient-to-r from-[#1B98F2] to-[#1580CD] text-white rounded-tr-none'
+                className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-5 shadow-xs ${m.role === 'user'
+                    ? 'bg-[#000000] text-white rounded-tr-none'
                     : 'bg-white border border-[#E5E7EB] text-[#000000] rounded-tl-none'
-                }`}
+                  }`}
               >
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{m.content}</p>
 
@@ -186,7 +185,7 @@ export const QAPage: React.FC<QAPageProps> = ({ currentLanguage, currentStyle })
 
         {isLoading && (
           <div className="flex items-start space-x-3.5">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1B98F2] to-[#7928CA] text-white flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 rounded-full bg-[#000000] text-white flex items-center justify-center flex-shrink-0">
               <Loader2 className="w-4 h-4 animate-spin" />
             </div>
             <div className="bg-white border border-[#E5E7EB] rounded-2xl rounded-tl-none p-4 shadow-xs text-xs text-[#71717A] flex items-center space-x-2">
@@ -210,7 +209,7 @@ export const QAPage: React.FC<QAPageProps> = ({ currentLanguage, currentStyle })
         <button
           type="submit"
           disabled={isLoading || !inputQuestion.trim()}
-          className="absolute right-1.5 p-2 rounded-full bg-[#1B98F2] text-white hover:bg-[#1580CD] disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer shadow-xs"
+          className="absolute right-1.5 p-2 rounded-full bg-[#000000] text-white hover:bg-[#242424] disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer shadow-xs"
         >
           <Send className="w-4 h-4" />
         </button>

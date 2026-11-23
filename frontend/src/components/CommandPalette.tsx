@@ -363,15 +363,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     onMouseEnter={() => setSelectedIndex(idx)}
                     className={`w-full text-left px-3.5 py-2.5 rounded-xl flex items-center justify-between transition-all ${
                       isSelected
-                        ? 'bg-[#1B98F2] text-white shadow-xs'
-                        : 'text-[#18181B] hover:bg-[#F4F4F5]'
+                        ? 'bg-[#EFF6FF] border border-[#DBEAFE] text-[#09090B] shadow-2xs'
+                        : 'border border-transparent text-[#18181B] hover:bg-[#F4F4F5]'
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div
                         className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
                           isSelected
-                            ? 'bg-white/15 text-white'
+                            ? 'bg-[#DBEAFE] text-[#1B98F2]'
                             : 'bg-[#F4F4F5] text-[#52525B]'
                         }`}
                       >
@@ -379,13 +379,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-semibold tracking-tight truncate">
+                          <span className={`text-xs font-semibold tracking-tight truncate ${isSelected ? 'text-[#09090B]' : 'text-[#18181B]'}`}>
                             {cmd.title}
                           </span>
                           <span
                             className={`text-[9px] uppercase px-1.5 py-0.2 rounded font-mono ${
                               isSelected
-                                ? 'bg-white/20 text-white'
+                                ? 'bg-[#DBEAFE] text-[#1B98F2] font-semibold'
                                 : 'bg-[#E4E4E7] text-[#71717A]'
                             }`}
                           >
@@ -395,7 +395,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         {cmd.subtitle && (
                           <p
                             className={`text-[11px] truncate mt-0.5 ${
-                              isSelected ? 'text-white/70' : 'text-[#71717A]'
+                              isSelected ? 'text-[#4D4D4D]' : 'text-[#71717A]'
                             }`}
                           >
                             {cmd.subtitle}
@@ -409,14 +409,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         <kbd
                           className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
                             isSelected
-                              ? 'bg-white/20 text-white border-white/30'
+                              ? 'bg-white text-[#1B98F2] border-[#DBEAFE] font-medium'
                               : 'bg-white text-[#71717A] border-[#E4E4E7]'
                           }`}
                         >
                           {cmd.shortcut}
                         </kbd>
                       )}
-                      {isSelected && <ArrowRight className="w-3.5 h-3.5 text-white" />}
+                      {isSelected && <ArrowRight className="w-3.5 h-3.5 text-[#1B98F2]" />}
                     </div>
                   </button>
                 );

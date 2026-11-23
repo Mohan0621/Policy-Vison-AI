@@ -124,7 +124,7 @@ export const ExportPage: React.FC = () => {
           <button
             onClick={handleDownloadZip}
             disabled={isDownloadingZip}
-            className="inline-flex items-center justify-center bg-gradient-to-r from-[#1B98F2] to-[#7928CA] hover:from-[#1580CD] hover:to-[#631EA8] text-white font-bold text-sm py-3.5 px-8 rounded-full shadow-md transition-all flex-shrink-0 disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center justify-center bg-[#000000] hover:bg-[#242424] text-white font-bold text-sm py-3.5 px-8 rounded-full shadow-md hover:shadow-lg transition-all flex-shrink-0 disabled:opacity-50 cursor-pointer"
           >
             {isDownloadingZip ? (
               <>
@@ -162,7 +162,7 @@ export const ExportPage: React.FC = () => {
             <a
               href={visuals.length > 0 ? apiClient.export.getImageUrl(visuals[0].image_id) : '/coverage_infographic_explainer.png'}
               download="Coverage_Infographic.png"
-              className="px-4 py-2 rounded-full bg-[#1B98F2] hover:bg-[#1580CD] text-white text-xs font-semibold transition-colors flex items-center space-x-1.5 shadow-2xs"
+              className="px-4 py-2 rounded-full bg-[#000000] hover:bg-[#242424] text-white text-xs font-semibold transition-colors flex items-center space-x-1.5 shadow-2xs"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Download</span>
@@ -183,7 +183,7 @@ export const ExportPage: React.FC = () => {
             <a
               href={visuals.length > 1 ? apiClient.export.getImageUrl(visuals[1].image_id) : '/claims_flowchart_explainer.png'}
               download="Claims_Flowchart.png"
-              className="px-4 py-2 rounded-full bg-[#1B98F2] hover:bg-[#1580CD] text-white text-xs font-semibold transition-colors flex items-center space-x-1.5 shadow-2xs"
+              className="px-4 py-2 rounded-full bg-[#000000] hover:bg-[#242424] text-white text-xs font-semibold transition-colors flex items-center space-x-1.5 shadow-2xs"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Download</span>

@@ -115,9 +115,9 @@ export const CanvasViewportToolbar: React.FC<CanvasViewportToolbarProps> = ({
       <div className="flex items-center space-x-1.5">
         <button
           onClick={onToggleCompare}
-          className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all ${
+          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
             isCompareMode
-              ? 'bg-[#1B98F2] text-white border-[#1B98F2] shadow-xs'
+              ? 'bg-[#000000] text-white border-[#000000] shadow-xs'
               : 'bg-white text-[#52525B] hover:text-[#09090B] border-[#E5E7EB]'
           }`}
           title="Compare dense policy fine print vs visual synthesis"
@@ -128,7 +128,7 @@ export const CanvasViewportToolbar: React.FC<CanvasViewportToolbarProps> = ({
 
         <button
           onClick={onOpenLightbox}
-          className="p-1.5 rounded-lg text-[#52525B] hover:text-[#09090B] hover:bg-white transition-colors"
+          className="p-1.5 rounded-lg text-[#52525B] hover:text-[#09090B] hover:bg-white transition-colors cursor-pointer"
           title="Inspect 1024×1024 150 DPI in Fullscreen Lightbox"
         >
           <Maximize2 className="w-3.5 h-3.5" />
@@ -136,9 +136,9 @@ export const CanvasViewportToolbar: React.FC<CanvasViewportToolbarProps> = ({
 
         <button
           onClick={onExport}
-          className="flex items-center gap-1 px-3 py-1 rounded-xl bg-[#1B98F2] text-white hover:bg-[#1580CD] text-xs font-bold transition-all shadow-xs"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#000000] hover:bg-[#242424] text-white text-xs font-medium transition-all shadow-xs cursor-pointer"
         >
-          <Download className="w-3 h-3" />
+          <Download className="w-3.5 h-3.5 text-white" />
           <span>Export 150 DPI</span>
         </button>
       </div>
