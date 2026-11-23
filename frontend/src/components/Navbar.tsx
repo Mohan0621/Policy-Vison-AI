@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Shield, Check, LogOut, Search } from 'lucide-react';
+import { ArrowRight, LogOut } from 'lucide-react';
 import { UserProfile } from '../api/client';
 
 export type PublicPage = 'home' | 'platform' | 'for_teams' | 'about';
@@ -23,7 +23,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSignInClick,
   onRegisterClick,
   onSignOut,
-  onOpenCommandPalette,
 }) => {
   const [scrolled, setScrolled] = useState(false);
 
@@ -36,7 +35,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, []);
 
   const navLinks: { id: PublicPage; label: string }[] = [
-    { id: 'home', label: 'Home' },
     { id: 'platform', label: 'Platform' },
     { id: 'for_teams', label: 'For teams' },
     { id: 'about', label: 'About' },
@@ -84,34 +82,15 @@ export const Navbar: React.FC<NavbarProps> = ({
               onNavigatePage('home');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-            className="flex items-center space-x-2 bg-white px-3.5 py-1.5 rounded-full border border-black/[0.06] shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:border-black/[0.14] hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] transition-all cursor-pointer group"
+            className="flex items-center space-x-2 bg-white/95 px-4 py-1.5 rounded-full border border-black/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:border-black/[0.14] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all cursor-pointer group"
           >
-            <div className="w-5 h-5 rounded-md bg-[#000000] text-white flex items-center justify-center font-bold text-[10px] group-hover:scale-105 transition-transform">
-              <Shield className="w-3 h-3 text-white fill-white" />
-            </div>
             <span className="text-xs sm:text-sm font-bold text-[#000000] tracking-tight">
               PolicyVision<span className="text-[#1B98F2]">.ai</span>
-            </span>
-            <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-semibold text-[#17510B] bg-[#C0F2B5] px-2 py-0.5 rounded-full">
-              <Check className="w-2.5 h-2.5" />
-              Visual Gen
             </span>
           </div>
 
           {/* Right: Actions */}
           <div className="flex items-center space-x-2 sm:space-x-3">
-            {onOpenCommandPalette && (
-              <button
-                onClick={onOpenCommandPalette}
-                className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F4F4F5] hover:bg-[#E4E4E7] text-[#71717A] hover:text-[#000000] border border-[#E4E4E7] text-xs transition-colors"
-                title="Open Command Palette (⌘K)"
-              >
-                <Search className="w-3.5 h-3.5" />
-                <span className="text-[11px] font-medium">Search...</span>
-                <kbd className="font-mono text-[9px] bg-white px-1.5 py-0.5 rounded border border-[#D4D4D8] text-[#52525B]">⌘K</kbd>
-              </button>
-            )}
-
             {user ? (
               <div className="flex items-center space-x-2">
                 <button
@@ -132,19 +111,17 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div className="flex items-center space-x-2">
                 <button
                   onClick={onSignInClick}
-                  className="px-3 py-1.5 text-xs sm:text-sm font-medium text-[#52525B] hover:text-[#000000] transition-colors"
+                  className="px-3 py-1.5 text-xs sm:text-sm font-medium text-[#52525B] hover:text-[#000000] transition-colors cursor-pointer"
                 >
                   Log in
                 </button>
 
-                {/* Serko Rainbow Button */}
                 <button
                   onClick={onRegisterClick}
-                  className="serko-btn-rainbow"
+                  className="px-4 py-1.5 rounded-full bg-white text-[#000000] border border-black/[0.1] hover:border-black/[0.2] hover:bg-[#FAFAFA] text-xs font-semibold shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
                 >
-                  <span className="!text-xs !py-1.5 !px-3 sm:!px-4 flex items-center gap-1.5">
-                    Launch Studio <ArrowRight className="w-3 h-3 text-[#000000]" />
-                  </span>
+                  <span>Get started</span>
+                  <ArrowRight className="w-3 h-3 text-[#71717A]" />
                 </button>
               </div>
             )}

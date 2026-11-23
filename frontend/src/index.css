@@ -66,13 +66,22 @@
 /* ── Serko Horizon Aura Backgrounds ── */
 .serko-hero-bg {
   background:
-    radial-gradient(circle at 50% 108%, rgba(255, 140, 81, 0.45) 0%, rgba(245, 98, 147, 0.35) 18%, rgba(207, 105, 224, 0.25) 32%, rgba(150, 203, 250, 0.35) 54%, rgba(229, 242, 255, 0.6) 75%, #FFFFFF 100%),
-    linear-gradient(to bottom, #E5F2FF 0%, #FFFFFF 55%);
+    linear-gradient(to bottom, #E5F2FF 0%, #E5F2FF 36%, rgba(229, 242, 255, 0) 68%),
+    radial-gradient(ellipse 220% 88% at 50% 102%,
+      #FF8C51 0%,
+      #FF897F 9%,
+      #F489AD 18%,
+      #E388F2 30%,
+      #96CBFA 52%,
+      #CFE6FC 70%,
+      #E5F2FF 88%,
+      #FFFFFF 100%
+    );
 }
 
 .serko-cta-bg {
   background:
-    radial-gradient(circle at 50% 115%, #E388F2 0%, #96CBFA 38%, #CFE6FC 68%, #E5F2FF 90%),
+    radial-gradient(ellipse 200% 90% at 50% 115%, #E388F2 0%, #96CBFA 38%, #CFE6FC 68%, #E5F2FF 90%),
     linear-gradient(to bottom, #FFFFFF 0%, transparent 35%);
 }
 
@@ -82,7 +91,7 @@
 
 /* ── Text Gradients (The Horizon Spectrum) ── */
 .horizon-gradient-text {
-  background: linear-gradient(135deg, #1B98F2 0%, #CF69E0 45%, #FF8C51 100%);
+  background: linear-gradient(to right, #FF8C51 0%, #F56293 30%, #CF69E0 65%, #1B98F2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

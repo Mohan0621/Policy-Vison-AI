@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Shield, Check, ArrowRight, ChevronDown, Clock,
-  Sparkles, Bell, ArrowUp, ImageIcon, Layers, ShieldCheck
+  Bell, ArrowUp, ImageIcon, Layers, ShieldCheck
 } from 'lucide-react';
 import { SerkoHeroGlobe } from '../components/SerkoHeroGlobe';
 import { PolicyDiffSlider } from '../components/PolicyDiffSlider';
@@ -126,54 +126,41 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <SerkoHeroGlobe className="top-0 h-full opacity-90" />
 
         {/* Hero Content Above the Globe Horizon */}
-        <div className="relative z-10 flex flex-col items-center text-center max-w-4xl mx-auto space-y-5">
+        <div className="relative z-10 flex flex-col items-center text-center max-w-4xl mx-auto space-y-4">
           {/* Eyebrow Label */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/90 border border-black/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.04)] backdrop-blur-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#1B98F2]" />
-            <span className="text-[11.5px] uppercase font-bold tracking-[0.9px] text-[#4D4D4D]">
-              Gen AI Image Generation App · Insurance (BFSI)
-            </span>
+          <div className="text-xs sm:text-[13px] font-medium text-[#71717A] tracking-wider">
+            AI policy explainer agent
           </div>
 
           {/* Display Headline */}
-          <h1 className="text-5xl sm:text-6xl lg:text-[68px] font-bold tracking-tight text-[#000000] leading-[1.06] max-w-3xl">
-            Generative visuals for{' '}
-            <span className="horizon-gradient-text">insurance policies</span>
+          <h1 className="text-5xl sm:text-6xl lg:text-[66px] font-bold tracking-tight text-[#000000] leading-[1.08] max-w-3xl">
+            The visual policy <span className="horizon-gradient-text">agent</span>
             <br />
-            & claims education.
+            you'll ever need.
           </h1>
 
-          {/* Subtitle strictly aligned to the Problem Statement */}
-          <p className="text-base sm:text-lg text-black/75 max-w-2xl leading-relaxed font-normal">
-            Insurers need clear visual explainers for policy products and claims processes, but custom illustration for every product line is slow. PolicyVision generates print-ready visual infographics and process flowcharts directly from policy text via diffusion models.
+          {/* Subtitle strictly aligned to Serko editorial rhythm */}
+          <p className="text-base sm:text-lg text-black/75 max-w-[580px] leading-relaxed font-normal">
+            PolicyVision learns how your policy clauses work, extracts rules in seconds, and orchestrates print-ready visual explainers from text to onboarding.
           </p>
 
           {/* Action Row */}
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+          <div className="flex items-center justify-center gap-3 pt-2">
             <button
               onClick={onRegister || onEnterStudio}
-              className="serko-btn-black !text-sm !py-3 !px-6 flex items-center gap-2"
+              className="serko-btn-black !text-sm !py-2.5 !px-6 flex items-center gap-2"
             >
-              <span>Generate Visuals Now</span>
+              <span>Get started</span>
               <ArrowRight className="w-4 h-4" />
             </button>
 
             <a
-              href="#how-it-works"
-              className="serko-btn-white !text-sm !py-3 !px-6"
+              href="#faqs"
+              className="serko-btn-white !text-sm !py-2.5 !px-5 flex items-center gap-1.5"
             >
-              How it works
+              <span>FAQs</span>
+              <ChevronDown className="w-3.5 h-3.5 text-[#71717A]" />
             </a>
-
-            <button
-              onClick={onEnterStudio}
-              className="serko-btn-rainbow"
-            >
-              <span className="!text-sm !py-2.5 !px-5 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#CF69E0]" />
-                <span>Diffusion Visual Engine</span>
-              </span>
-            </button>
           </div>
         </div>
 
