@@ -91,8 +91,8 @@ export const SerkoHeroGlobe: React.FC<SerkoHeroGlobeProps> = ({ className = '' }
 
     function getSphereGeometry() {
       const cx = width * 0.5;
-      const cy = height * 0.50;
-      const radius = Math.max(240, Math.min(width * 0.36, height * 0.44, 340));
+      const cy = height * 0.74;
+      const radius = Math.max(240, Math.min(width * 0.36, height * 0.33));
       return { cx, cy, radius };
     }
 
@@ -102,30 +102,30 @@ export const SerkoHeroGlobe: React.FC<SerkoHeroGlobeProps> = ({ className = '' }
       auraCanvas.height = Math.max(1, height);
       auraCtx.clearRect(0, 0, width, height);
 
-      // Outer soft atmospheric sky halo (soft blue to lavender)
-      const outer = auraCtx.createRadialGradient(cx, cy - radius * 0.12, radius * 0.38, cx, cy, radius * 1.22);
-      outer.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
-      outer.addColorStop(0.48, 'rgba(180, 220, 255, 0.22)');
-      outer.addColorStop(0.78, 'rgba(235, 215, 255, 0.12)');
+      // Outer soft atmospheric sky halo matching AgentOps
+      const outer = auraCtx.createRadialGradient(cx, cy - radius * 0.15, radius * 0.4, cx, cy, radius * 1.18);
+      outer.addColorStop(0, 'rgba(255, 255, 255, 0.36)');
+      outer.addColorStop(0.55, 'rgba(150, 203, 250, 0.18)');
+      outer.addColorStop(0.85, 'rgba(207, 105, 224, 0.08)');
       outer.addColorStop(1, 'rgba(255, 255, 255, 0)');
       auraCtx.fillStyle = outer;
       auraCtx.beginPath();
-      auraCtx.arc(cx, cy, radius * 1.22, 0, Math.PI * 2);
+      auraCtx.arc(cx, cy, radius * 1.18, 0, Math.PI * 2);
       auraCtx.fill();
 
-      // Soft translucent glass sphere interior highlight matching live serko.ai dome
+      // Soft translucent glass sphere interior highlight matching AgentOps
       const inner = auraCtx.createRadialGradient(
         cx,
-        cy - radius * 0.28,
+        cy - radius * 0.32,
         radius * 0.06,
         cx,
         cy,
         radius
       );
-      inner.addColorStop(0, 'rgba(255, 255, 255, 0.52)');
-      inner.addColorStop(0.55, 'rgba(205, 235, 255, 0.20)');
-      inner.addColorStop(0.85, 'rgba(225, 210, 250, 0.08)');
-      inner.addColorStop(1, 'rgba(255, 255, 255, 0.01)');
+      inner.addColorStop(0, 'rgba(255, 255, 255, 0.42)');
+      inner.addColorStop(0.58, 'rgba(150, 203, 250, 0.22)');
+      inner.addColorStop(0.88, 'rgba(27, 152, 242, 0.10)');
+      inner.addColorStop(1, 'rgba(255, 255, 255, 0.02)');
       auraCtx.fillStyle = inner;
       auraCtx.beginPath();
       auraCtx.arc(cx, cy, radius, 0, Math.PI * 2);

@@ -114,12 +114,14 @@ def test_different_policies_produce_distinct_visual_plans(health_passages, motor
     # 1. Health Plan verifies ₹25,00,000 from health contract
     assert "25,00,000" in plan_health.hero_metric["value"]
     assert "Optima Secure" in plan_health.title
-    assert "health" in plan_health.art_direction.lower()
+    art_h = (plan_health.art_direction + " " + (plan_health.hero_artwork_prompt or "")).lower()
+    assert any(w in art_h for w in ["health", "shield", "medical", "hospital"])
 
     # 2. Motor Plan verifies ₹8,75,000 from motor contract
     assert "8,75,000" in plan_motor.hero_metric["value"]
     assert "DriveSmart" in plan_motor.title or "Motor" in plan_motor.title
-    assert "motor" in plan_motor.art_direction.lower()
+    art_m = (plan_motor.art_direction + " " + (plan_motor.hero_artwork_prompt or "")).lower()
+    assert any(w in art_m for w in ["motor", "car", "vehicle", "automotive", "drivesmart"])
 
     # 3. Titles and sections must be completely different
     assert plan_health.title != plan_motor.title

@@ -233,13 +233,21 @@ Generate JSON matching this exact structure:
                     for i, p in enumerate(data.get("process_steps", []))
                 ]
 
+            comp_style = data.get("composition_style")
+            if visual_type == "claims" or not comp_style:
+                comp_style = "split_comparison" if visual_type == "claims" else "asymmetric_bento"
+
+            plan_title = data.get("title", "Policy Visual Explainer")
+            if visual_type == "claims" and not any(w in plan_title.lower() for w in ["claim", "flowchart", "process", "workflow", "adjudication"]):
+                plan_title = f"{plan_title} Claims Flowchart"
+
             return VisualPlan(
-                title=data.get("title", "Policy Visual Explainer"),
+                title=plan_title,
                 subtitle=data.get("subtitle", "Grounded Insurance Policy Explainer"),
                 language=language,
                 visual_type=visual_type,
                 art_direction=data.get("art_direction", "Premium 3D editorial graphic design"),
-                composition_style=data.get("composition_style", "asymmetric_bento"),
+                composition_style=comp_style,
                 color_palette=data.get("color_palette", {
                     "primary": "#1E3A8A",
                     "accent": "#10B981",
