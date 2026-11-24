@@ -28,6 +28,15 @@ class Settings(BaseSettings):
     HF_API_TOKEN: str = os.getenv("HF_API_TOKEN", "")
     HF_IMAGE_MODEL: str = os.getenv("HF_IMAGE_MODEL", "black-forest-labs/FLUX.1-schnell")
     
+    # Cloudflare Workers AI Configs (10,000 free Neurons/day for FLUX.1-schnell)
+    CF_ACCOUNT_ID: str = os.getenv("CF_ACCOUNT_ID", "")
+    CF_API_TOKEN: str = os.getenv("CF_API_TOKEN", "")
+    CF_IMAGE_MODEL: str = os.getenv("CF_IMAGE_MODEL", "@cf/black-forest-labs/flux-1-schnell")
+    
+    # OpenRouter Configs (Free flux.2-flex:free endpoint)
+    OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
+    OPENROUTER_IMAGE_MODEL: str = os.getenv("OPENROUTER_IMAGE_MODEL", "black-forest-labs/flux.2-flex:free")
+    
     # Model configs
     EMBEDDING_MODEL: str = "BAAI/bge-m3"
     LLM_MODEL_PATH: str = "models/llama-3.1-8b-instruct.Q4_K_M.gguf"

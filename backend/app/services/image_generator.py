@@ -1311,6 +1311,69 @@ def _try_diffusers(prompt: ImagePrompt, backend: str, width: int, height: int) -
         return None
 
 
+def _try_cloudflare_flux(prompt: ImagePrompt) -> Optional[Image.Image]:
+    """
+    Generate image via Cloudflare Workers AI free tier.
+    Model: @cf/black-forest-labs/flux-1-schnell
+    Quota: 10,000 free Neurons/day
+    """
+    account_id = settings.CF_ACCOUNT_ID
+    token = settings.CF_API_TOKEN
+    model = settings.CF_IMAGE_MODEL or "@cf/black-forest-labs/flux-1-schnell"
+    if not (account_id and token):
+        return None
+    try:
+        import httpx
+        url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/{model}"
+        headers = {"Authorization": f"Bearer {token}"}
+        resp = httpx.post(url, headers=headers, json={"prompt": prompt.prompt_text}, timeout=60.0)
+        if resp.status_code == 200:
+            return Image.open(io.BytesIO(resp.content))
+    except Exception:
+        return None
+    return None
+
+
+def _try_openrouter_flux(prompt: ImagePrompt) -> Optional[Image.Image]:
+    """
+    Generate image via OpenRouter free endpoint.
+    Model: black-forest-labs/flux.2-flex:free
+    """
+    api_key = settings.OPENROUTER_API_KEY
+    model = settings.OPENROUTER_IMAGE_MODEL or "black-forest-labs/flux.2-flex:free"
+    if not api_key:
+        return None
+    try:
+        import httpx
+        url = "https://openrouter.ai/api/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "HTTP-Referer": "http://localhost:3000",
+            "X-Title": "PolicyVision AI",
+        }
+        resp = httpx.post(url, headers=headers, json={
+            "model": model,
+            "messages": [{"role": "user", "content": prompt.prompt_text}],
+        }, timeout=60.0)
+        if resp.status_code == 200:
+            # Check for binary image or url
+            data = resp.json()
+            choices = data.get("choices", [])
+            if choices:
+                content = choices[0].get("message", {}).get("content", "")
+                # If markdown image link
+                import re
+                match = re.search(r'\((https://[^\)]+)\)', content)
+                if match:
+                    img_url = match.group(1)
+                    img_resp = httpx.get(img_url, timeout=30.0)
+                    if img_resp.status_code == 200:
+                        return Image.open(io.BytesIO(img_resp.content))
+    except Exception:
+        return None
+    return None
+
+
 # ---------------------------------------------------------------------------
 # ImageGenerator
 # ---------------------------------------------------------------------------
@@ -1488,7 +1551,13 @@ class ImageGenerator:
         pil_img: Optional[Image.Image] = None
         used_canvas = False
 
-        if self.backend in ("sdxl_turbo", "flux"):
+        if self.backend in ("cloudflare", "cf", "flux_cloudflare") or (self.backend == "flux" and settings.CF_ACCOUNT_ID and settings.CF_API_TOKEN):
+            pil_img = _try_cloudflare_flux(prompt)
+
+        if pil_img is None and (self.backend in ("openrouter", "flux_openrouter") or (self.backend == "flux" and settings.OPENROUTER_API_KEY)):
+            pil_img = _try_openrouter_flux(prompt)
+
+        if pil_img is None and self.backend in ("sdxl_turbo", "flux"):
             pil_img = _try_diffusers(prompt, self.backend, width, height)
 
         # If diffusers unavailable or failed, use Pillow canvas
