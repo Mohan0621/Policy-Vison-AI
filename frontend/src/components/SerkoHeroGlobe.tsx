@@ -4,6 +4,10 @@ interface SerkoHeroGlobeProps {
   className?: string;
 }
 
+/**
+ * 1:1 Pixel-Perfect TypeScript port of AgentOps / IncidentIQ hero-globe.html
+ * Source: D:\Mohan\AgentOps\agentops\src\main\resources\web\hero-globe.html
+ */
 export const SerkoHeroGlobe: React.FC<SerkoHeroGlobeProps> = ({ className = '' }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pointerRef = useRef<{
@@ -11,15 +15,11 @@ export const SerkoHeroGlobe: React.FC<SerkoHeroGlobeProps> = ({ className = '' }
     targetY: number;
     currentX: number;
     currentY: number;
-    mouseX: number;
-    mouseY: number;
   }>({
     targetX: 0,
     targetY: 0,
     currentX: 0,
     currentY: 0,
-    mouseX: -1000,
-    mouseY: -1000,
   });
 
   useEffect(() => {
@@ -40,9 +40,9 @@ export const SerkoHeroGlobe: React.FC<SerkoHeroGlobeProps> = ({ className = '' }
 
     const DEG = Math.PI / 180;
 
-    // Fibonacci sphere dots
+    // Dense charcoal stippled surface dots along Fibonacci sphere (520 dots matching AgentOps)
     const dots: { x: number; y: number; z: number }[] = [];
-    const N = 460;
+    const N = 520;
     const goldenAngle = Math.PI * (3 - Math.sqrt(5));
     for (let i = 0; i < N; i++) {
       const y = 1 - (i / (N - 1)) * 2;
@@ -51,13 +51,14 @@ export const SerkoHeroGlobe: React.FC<SerkoHeroGlobeProps> = ({ className = '' }
       dots.push({ x: Math.cos(theta) * r, y, z: Math.sin(theta) * r });
     }
 
+    // Exact 6 global telemetry hubs from AgentOps hero-globe.html
     const hubs = [
-      { name: 'IRDAI HQ (New Delhi)', tag: 'Regulatory Grounding', lat: 28.61, lon: 77.20 },
-      { name: 'Mumbai Financial Hub', tag: 'Underwriting Desk', lat: 19.07, lon: 72.87 },
-      { name: 'Bengaluru Tech Node', tag: 'Diffusion Engine 150 DPI', lat: 12.97, lon: 77.59 },
-      { name: 'Hyderabad TPA Grid', tag: '60-min Cashless SLA', lat: 17.38, lon: 78.48 },
-      { name: 'Chennai Insurance Hub', tag: 'Claims Adjudication', lat: 13.08, lon: 80.27 },
-      { name: 'Kolkata Regional Desk', tag: 'Indic Multi-Script', lat: 22.57, lon: 88.36 },
+      { lat: 37.77, lon: -122.41 },
+      { lat: 40.71, lon: -74.00 },
+      { lat: 51.50, lon: -0.12 },
+      { lat: 50.11, lon: 8.68 },
+      { lat: 12.97, lon: 77.59 },
+      { lat: 35.67, lon: 139.65 },
     ];
 
     const routes: [number, number][] = [
@@ -66,7 +67,6 @@ export const SerkoHeroGlobe: React.FC<SerkoHeroGlobeProps> = ({ className = '' }
       [2, 3],
       [3, 4],
       [4, 5],
-      [5, 0],
     ];
 
     function latLonToVec(lat: number, lon: number) {
@@ -103,7 +103,14 @@ export const SerkoHeroGlobe: React.FC<SerkoHeroGlobeProps> = ({ className = '' }
       auraCtx.clearRect(0, 0, width, height);
 
       // Outer soft atmospheric sky halo matching AgentOps
-      const outer = auraCtx.createRadialGradient(cx, cy - radius * 0.15, radius * 0.4, cx, cy, radius * 1.18);
+      const outer = auraCtx.createRadialGradient(
+        cx,
+        cy - radius * 0.15,
+        radius * 0.4,
+        cx,
+        cy,
+        radius * 1.18
+      );
       outer.addColorStop(0, 'rgba(255, 255, 255, 0.36)');
       outer.addColorStop(0.55, 'rgba(150, 203, 250, 0.18)');
       outer.addColorStop(0.85, 'rgba(207, 105, 224, 0.08)');
@@ -136,7 +143,7 @@ export const SerkoHeroGlobe: React.FC<SerkoHeroGlobeProps> = ({ className = '' }
       if (!canvas || !ctx) return;
       const rect = canvas.getBoundingClientRect();
       width = rect.width || window.innerWidth;
-      height = rect.height || 700;
+      height = rect.height || 850;
       dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       canvas.width = Math.max(1, Math.floor(width * dpr));
       canvas.height = Math.max(1, Math.floor(height * dpr));
@@ -154,15 +161,11 @@ export const SerkoHeroGlobe: React.FC<SerkoHeroGlobeProps> = ({ className = '' }
       const ny = ((e.clientY - rect.top) / (rect.height || window.innerHeight) - 0.5) * 2;
       pointerRef.current.targetX = Math.max(-1, Math.min(1, nx));
       pointerRef.current.targetY = Math.max(-1, Math.min(1, ny));
-      pointerRef.current.mouseX = e.clientX - rect.left;
-      pointerRef.current.mouseY = e.clientY - rect.top;
     };
 
     const onMouseLeave = () => {
       pointerRef.current.targetX = 0;
       pointerRef.current.targetY = 0;
-      pointerRef.current.mouseX = -1000;
-      pointerRef.current.mouseY = -1000;
     };
 
     window.addEventListener('mousemove', onMouseMove);
@@ -172,7 +175,7 @@ export const SerkoHeroGlobe: React.FC<SerkoHeroGlobeProps> = ({ className = '' }
       if (!ctx) return;
       const dt = Math.min(0.06, (now - lastPaint) / 1000);
       lastPaint = now;
-      t += dt * 0.28;
+      t += dt * 0.34;
 
       const p = pointerRef.current;
       p.currentX += (p.targetX - p.currentX) * 0.08;
@@ -181,34 +184,32 @@ export const SerkoHeroGlobe: React.FC<SerkoHeroGlobeProps> = ({ className = '' }
       ctx.clearRect(0, 0, width, height);
 
       const geom = getSphereGeometry();
-      const cx = geom.cx + p.currentX * 24;
-      const cy = geom.cy + p.currentY * 16;
+      const cx = geom.cx + p.currentX * 7;
+      const cy = geom.cy + p.currentY * 5;
       const radius = geom.radius;
-      const rotY = t * 0.45 + p.currentX * 0.5;
-      const rotX = -0.15 + p.currentY * 0.3;
+      const rotY = t * 0.42 + p.currentX * 0.24;
+      const rotX = -0.28 + p.currentY * 0.14;
 
       // 1. Atmosphere
       if (auraCanvas.width > 0 && auraCanvas.height > 0) {
-        ctx.drawImage(auraCanvas, p.currentX * 8, p.currentY * 6, width, height);
+        ctx.drawImage(auraCanvas, p.currentX * 7, p.currentY * 5, width, height);
       }
 
-      // 2. Rim ring
-      ctx.setLineDash([]);
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.16)';
-      ctx.lineWidth = 1;
+      // 2. Subtle thin dark charcoal outer rim ring
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.28)';
+      ctx.lineWidth = 1.1;
       ctx.beginPath();
       ctx.arc(cx, cy, radius, 0, Math.PI * 2);
       ctx.stroke();
 
-      // 3. Latitude wireframe arcs (dotted for serko precision)
-      ctx.setLineDash([2, 5]);
-      ctx.lineWidth = 0.75;
-      for (let lat = -60; lat <= 75; lat += 20) {
+      // 3. Latitude wireframe arcs
+      ctx.lineWidth = 0.85;
+      for (let lat = -60; lat <= 75; lat += 15) {
         ctx.beginPath();
         let started = false;
-        for (let lon = -180; lon <= 180; lon += 10) {
+        for (let lon = -180; lon <= 180; lon += 8) {
           const pt = rotateVec(latLonToVec(lat, lon), rotY, rotX);
-          if (pt.z > -0.05) {
+          if (pt.z > -0.02) {
             const sx = cx + pt.x * radius;
             const sy = cy - pt.y * radius;
             if (!started) {
@@ -221,15 +222,15 @@ export const SerkoHeroGlobe: React.FC<SerkoHeroGlobeProps> = ({ className = '' }
             started = false;
           }
         }
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.07)';
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.14)';
         ctx.stroke();
       }
 
-      // Longitude arcs (dotted)
-      for (let lon = 0; lon < 180; lon += 24) {
+      // Longitude wireframe arcs
+      for (let lon = 0; lon < 180; lon += 18) {
         ctx.beginPath();
         let started = false;
-        for (let a = 0; a <= 360; a += 10) {
+        for (let a = 0; a <= 360; a += 8) {
           const rad = a * DEG;
           const vec = {
             x: Math.cos(rad) * Math.cos(lon * DEG),
@@ -237,7 +238,7 @@ export const SerkoHeroGlobe: React.FC<SerkoHeroGlobeProps> = ({ className = '' }
             z: Math.cos(rad) * Math.sin(lon * DEG),
           };
           const pt = rotateVec(vec, rotY, rotX);
-          if (pt.z > -0.05) {
+          if (pt.z > -0.02) {
             const sx = cx + pt.x * radius;
             const sy = cy - pt.y * radius;
             if (!started) {
@@ -250,38 +251,37 @@ export const SerkoHeroGlobe: React.FC<SerkoHeroGlobeProps> = ({ className = '' }
             started = false;
           }
         }
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.11)';
         ctx.stroke();
       }
 
-      // 4. Fibonacci surface dots
-      ctx.setLineDash([]);
+      // 4. Charcoal stippled surface dots matching AgentOps
       for (let i = 0; i < dots.length; i++) {
         const pt = rotateVec(dots[i], rotY, rotX);
         if (pt.z > 0.02) {
-          const alpha = Math.max(0.12, Math.min(0.75, pt.z * 0.85));
+          const alpha = Math.max(0.18, Math.min(0.88, pt.z * 0.92));
           const sx = cx + pt.x * radius;
           const sy = cy - pt.y * radius;
           ctx.fillStyle = `rgba(17, 24, 39, ${alpha})`;
           ctx.beginPath();
-          ctx.arc(sx, sy, pt.z > 0.45 ? 1.25 : 0.85, 0, Math.PI * 2);
+          ctx.arc(sx, sy, pt.z > 0.48 ? 1.35 : 0.95, 0, Math.PI * 2);
           ctx.fill();
         }
       }
 
-      // 5. Orbital routes
+      // 5. Restrained dark + sky telemetry orbital paths
       routes.forEach((pair, idx) => {
         const va = latLonToVec(hubs[pair[0]].lat, hubs[pair[0]].lon);
         const vb = latLonToVec(hubs[pair[1]].lat, hubs[pair[1]].lon);
         const pts: { sx: number; sy: number; z: number }[] = [];
-        const steps = 18;
+        const steps = 22;
         for (let s = 0; s <= steps; s++) {
           const f = s / steps;
           let mx = va.x * (1 - f) + vb.x * f;
           let my = va.y * (1 - f) + vb.y * f;
           let mz = va.z * (1 - f) + vb.z * f;
           const len = Math.hypot(mx, my, mz) || 1;
-          const lift = 1 + Math.sin(f * Math.PI) * 0.12;
+          const lift = 1 + Math.sin(f * Math.PI) * 0.14;
           mx = (mx / len) * lift;
           my = (my / len) * lift;
           mz = (mz / len) * lift;
@@ -290,14 +290,14 @@ export const SerkoHeroGlobe: React.FC<SerkoHeroGlobeProps> = ({ className = '' }
         }
 
         const midZ = pts[Math.floor(steps / 2)].z;
-        if (midZ > 0.02) {
+        if (midZ > 0.05) {
           const grad = ctx.createLinearGradient(pts[0].sx, pts[0].sy, pts[steps].sx, pts[steps].sy);
-          grad.addColorStop(0, 'rgba(0, 0, 0, 0.15)');
-          grad.addColorStop(0.5, 'rgba(27, 152, 242, 0.45)');
-          grad.addColorStop(1, 'rgba(0, 0, 0, 0.15)');
+          grad.addColorStop(0, 'rgba(0, 0, 0, 0.22)');
+          grad.addColorStop(0.5, 'rgba(27, 152, 242, 0.42)');
+          grad.addColorStop(1, 'rgba(0, 0, 0, 0.22)');
 
           ctx.strokeStyle = grad;
-          ctx.lineWidth = 1.1;
+          ctx.lineWidth = 1.25;
           ctx.beginPath();
           pts.forEach((pt, k) => {
             if (k === 0) ctx.moveTo(pt.sx, pt.sy);
@@ -305,92 +305,61 @@ export const SerkoHeroGlobe: React.FC<SerkoHeroGlobeProps> = ({ className = '' }
           });
           ctx.stroke();
 
-          // Packet
-          const progress = (t * 0.65 + idx * 0.2) % 1;
+          // Packet with subtle fading tail along orbital arc
+          const progress = (t * 0.65 + idx * 0.22) % 1;
           const orbIdx = Math.min(steps, Math.floor(progress * steps));
           const orbPt = pts[orbIdx];
-          if (orbPt && orbPt.z > 0.08) {
-            ctx.fillStyle = 'rgba(27, 152, 242, 0.25)';
+          if (orbPt && orbPt.z > 0.1) {
+            for (let trail = 2; trail >= 1; trail--) {
+              const tIdx = Math.max(0, orbIdx - trail);
+              const tPt = pts[tIdx];
+              if (tPt && tPt.z > 0.08) {
+                ctx.fillStyle = trail === 1 ? 'rgba(27, 152, 242, 0.42)' : 'rgba(207, 105, 224, 0.22)';
+                ctx.beginPath();
+                ctx.arc(tPt.sx, tPt.sy, trail === 1 ? 1.8 : 1.4, 0, Math.PI * 2);
+                ctx.fill();
+              }
+            }
+
+            ctx.fillStyle = 'rgba(27, 152, 242, 0.24)';
             ctx.beginPath();
-            ctx.arc(orbPt.sx, orbPt.sy, 5, 0, Math.PI * 2);
+            ctx.arc(orbPt.sx, orbPt.sy, 5.2, 0, Math.PI * 2);
             ctx.fill();
 
-            ctx.fillStyle = 'rgba(27, 152, 242, 0.95)';
+            ctx.fillStyle = 'rgba(27, 152, 242, 0.92)';
             ctx.beginPath();
-            ctx.arc(orbPt.sx, orbPt.sy, 2.2, 0, Math.PI * 2);
+            ctx.arc(orbPt.sx, orbPt.sy, 2.3, 0, Math.PI * 2);
             ctx.fill();
           }
         }
       });
 
-      // 6. Hub pulses & Interactive Hover Highlighting
+      // 6. Live pulsing hub beacons on visible hemisphere
       const activeAlertHub = Math.floor(t * 0.35) % hubs.length;
-      let hoveredHub: { name: string; tag: string; sx: number; sy: number } | null = null;
-
-      for (let hIdx = 0; hIdx < hubs.length; hIdx++) {
-        const hub = hubs[hIdx];
+      hubs.forEach((hub, hIdx) => {
         const rp = rotateVec(latLonToVec(hub.lat, hub.lon), rotY, rotX);
-        if (rp.z > 0.1) {
+        if (rp.z > 0.14) {
           const hx = cx + rp.x * radius;
           const hy = cy - rp.y * radius;
-          const isAlert = hIdx === activeAlertHub;
-          const pulse = (t * 1.5 + hIdx * 0.3) % 1;
-          const rippleR = 2.5 + pulse * 11;
-          const rippleAlpha = (1 - pulse) * (isAlert ? 0.55 : 0.28);
+          const isWatchHub = hIdx === activeAlertHub;
+          const pulse = (t * 1.45 + hIdx * 0.28) % 1;
+          const rippleR = 2.5 + pulse * 10.5;
+          const rippleAlpha = (1 - pulse) * (isWatchHub ? 0.48 : 0.26);
 
-          // Check if cursor is hovering near this hub
-          const distToMouse = Math.hypot(p.mouseX - hx, p.mouseY - hy);
-          const isHovered = distToMouse < 45;
-          if (isHovered && !hoveredHub) {
-            hoveredHub = { name: hub.name, tag: hub.tag, sx: hx, sy: hy };
-          }
-
-          ctx.strokeStyle = isHovered
-            ? 'rgba(27, 152, 242, 0.9)'
-            : isAlert
+          ctx.strokeStyle = isWatchHub
             ? `rgba(245, 98, 147, ${rippleAlpha})`
             : `rgba(27, 152, 242, ${rippleAlpha})`;
-          ctx.lineWidth = isHovered ? 1.8 : 1;
+          ctx.lineWidth = 1.1;
           ctx.beginPath();
-          ctx.arc(hx, hy, isHovered ? 14 : rippleR, 0, Math.PI * 2);
+          ctx.arc(hx, hy, rippleR, 0, Math.PI * 2);
           ctx.stroke();
 
-          ctx.fillStyle = isHovered
-            ? '#1B98F2'
-            : isAlert
-            ? 'rgba(245, 98, 147, 0.95)'
-            : 'rgba(17, 24, 39, 0.85)';
+          ctx.fillStyle = isWatchHub ? 'rgba(245, 98, 147, 0.92)' : 'rgba(17, 24, 39, 0.78)';
           ctx.beginPath();
-          ctx.arc(hx, hy, isHovered ? 3.5 : isAlert ? 2.5 : 2, 0, Math.PI * 2);
+          ctx.arc(hx, hy, isWatchHub ? 2.4 : 1.9, 0, Math.PI * 2);
           ctx.fill();
         }
-      }
-
-      // Render interactive hover tooltip for hovered hub
-      if (hoveredHub) {
-        const { name, tag, sx, sy } = hoveredHub;
-        const boxW = Math.max(160, name.length * 6.5 + 40);
-        const boxH = 40;
-        const boxX = Math.max(10, Math.min(width - boxW - 10, sx - boxW / 2));
-        const boxY = Math.max(10, sy - 54);
-
-        ctx.fillStyle = 'rgba(9, 9, 11, 0.9)';
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.roundRect(boxX, boxY, boxW, boxH, 10);
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = 'bold 11px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(name, boxX + boxW / 2, boxY + 16);
-
-        ctx.fillStyle = '#C0F2B5';
-        ctx.font = '9px monospace';
-        ctx.fillText(`• ${tag}`, boxX + boxW / 2, boxY + 30);
-      }
+      });
 
       rafId = requestAnimationFrame(frame);
     }
@@ -409,6 +378,21 @@ export const SerkoHeroGlobe: React.FC<SerkoHeroGlobeProps> = ({ className = '' }
     <canvas
       ref={canvasRef}
       className={`absolute inset-0 pointer-events-none w-full h-full ${className}`}
+      style={{
+        background: `
+          linear-gradient(to bottom, #E5F2FF 0%, #E5F2FF 36%, rgba(229, 242, 255, 0) 68%),
+          radial-gradient(ellipse 220% 88% at 50% 102%,
+            #FF8C51 0%,
+            #FF897F 9%,
+            #F489AD 18%,
+            #E388F2 30%,
+            #96CBFA 52%,
+            #CFE6FC 70%,
+            #E5F2FF 88%,
+            #FFFFFF 100%
+          )
+        `,
+      }}
     />
   );
 };

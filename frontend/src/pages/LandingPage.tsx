@@ -124,21 +124,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           PAGE 1: HOME HERO (Serko Horizon Command Press - Unified)
          ═════════════════════════════════════════════════════════════ */}
       <section className="relative w-full min-h-[1080px] lg:min-h-[1140px] serko-hero-bg flex flex-col items-center pt-32 sm:pt-36 pb-16 px-4 sm:px-6 overflow-hidden">
-        {/* Soft atmospheric aura */}
-        <div className="absolute inset-0 bg-radial-at-c from-sky-100/35 via-transparent to-transparent pointer-events-none" />
-
         {/* HTML5 Canvas Fibonacci Stippled Globe Backdrop matching AgentOps */}
-        <SerkoHeroGlobe className="top-0 h-full opacity-90" />
+        <SerkoHeroGlobe className="top-0 h-full" />
 
         {/* Hero Content Above the Globe Horizon */}
         <div className="relative z-10 flex flex-col items-center text-center max-w-4xl mx-auto space-y-3.5 sm:space-y-4">
           {/* Eyebrow Label */}
-          <div className="text-xs sm:text-[13px] font-medium text-[#71717A] tracking-wider uppercase">
+          <div className="text-xs sm:text-[13px] font-bold text-[#71717A] tracking-[0.9px] uppercase">
             AI policy explainer agent
           </div>
 
           {/* Display Headline */}
-          <h1 className="text-5xl sm:text-6xl lg:text-[64px] font-bold tracking-tight text-[#000000] leading-[1.08] max-w-3xl">
+          <h1 className="text-5xl sm:text-6xl lg:text-[60px] font-bold tracking-tight text-[#000000] leading-[1.08] max-w-3xl">
             The visual policy <span className="horizon-gradient-text">agent</span>
             <br />
             you'll ever need.
@@ -153,7 +150,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="flex items-center justify-center gap-3 pt-2">
             <button
               onClick={onRegister || onEnterStudio}
-              className="serko-btn-black !text-sm !py-2.5 !px-6 flex items-center gap-2 shadow-md hover:shadow-lg transition-all"
+              className="serko-btn-black !text-sm !py-2.5 !px-6 flex items-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer"
             >
               <span>Get started</span>
               <ArrowRight className="w-4 h-4" />
@@ -163,7 +160,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 const el = document.getElementById('faqs-section');
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="bg-white/90 hover:bg-white text-black border border-black/[0.12] rounded-full text-sm font-medium py-2.5 px-5 flex items-center gap-1.5 shadow-xs hover:shadow-md transition-all cursor-pointer"
+              className="bg-white hover:bg-white text-black border border-black/[0.12] rounded-full text-sm font-medium py-2.5 px-5 flex items-center gap-1.5 shadow-xs hover:shadow-md transition-all cursor-pointer"
             >
               <span>FAQs</span>
               <ChevronDown className="w-4 h-4 text-black/60" />
@@ -172,7 +169,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
 
         {/* Clean breathing space over rising dotted dome (AgentOps domeSpacer 360px) */}
-        <div className="w-full h-[280px] sm:h-[340px] pointer-events-none" />
+        <div className="w-full h-[320px] sm:h-[360px] pointer-events-none" />
 
         {/* Structured 3-column staggered layout matching AgentOps buildHeroInteractiveCard() */}
         <div
@@ -184,11 +181,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             {/* 1. Left floating service route confirmation chip */}
             <div
               onClick={() => setHeroIdx((prev) => (prev + 1) % heroStates.length)}
-              className="w-full sm:w-[220px] bg-white rounded-2xl border border-black/[0.08] p-3.5 shadow-[0_12px_32px_rgba(0,0,0,0.08)] hover:scale-105 hover:border-[#1B98F2]/40 transition-all duration-300 cursor-pointer group"
+              className="w-full sm:w-[214px] bg-white rounded-[16px] border border-black/[0.06] p-3.5 shadow-[0_12px_32px_rgba(0,0,0,0.08)] hover:scale-105 hover:border-[#1B98F2]/40 transition-all duration-300 cursor-pointer group shrink-0"
             >
               <div className="flex items-center gap-2">
                 <span className="font-mono text-xs text-[#000000] font-semibold">{`>_`}</span>
-                <p className="text-xs font-bold text-[#000000] truncate">
+                <p className="text-[11.5px] font-bold text-[#000000] truncate">
                   {activeHero.routeTitle}
                 </p>
               </div>
@@ -198,7 +195,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* 2. Center foreground Serko layered profile widget (#F6F6F6 container) */}
-            <div className="w-full sm:w-[390px] bg-[#F6F6F6] rounded-[20px] border border-black/[0.06] p-3.5 shadow-[0_14px_38px_rgba(0,0,0,0.10)] hover:shadow-[0_20px_45px_rgba(0,0,0,0.14)] hover:border-[#1B98F2]/30 transition-all duration-300">
+            <div className="w-full sm:w-[390px] bg-[#F6F6F6] rounded-[20px] border border-black/[0.06] p-3.5 shadow-[0_14px_38px_rgba(0,0,0,0.10)] hover:shadow-[0_20px_45px_rgba(0,0,0,0.14)] hover:border-[#1B98F2]/30 transition-all duration-300 shrink-0">
               {/* Top Action Pill */}
               <div
                 onClick={() => setHeroIdx((prev) => (prev + 1) % heroStates.length)}
@@ -233,7 +230,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             {/* 3. Right floating verified deployment chip */}
             <div
               onClick={() => setHeroIdx((prev) => (prev + 1) % heroStates.length)}
-              className="w-full sm:w-[240px] bg-white rounded-2xl border border-black/[0.08] p-3.5 shadow-[0_12px_32px_rgba(0,0,0,0.08)] hover:scale-105 hover:border-[#158142]/40 transition-all duration-300 cursor-pointer group"
+              className="w-full sm:w-[244px] bg-white rounded-[16px] border border-black/[0.06] p-3.5 shadow-[0_12px_32px_rgba(0,0,0,0.08)] hover:scale-105 hover:border-[#158142]/40 transition-all duration-300 cursor-pointer group shrink-0"
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -244,7 +241,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     {activeHero.confSub}
                   </p>
                 </div>
-                <span className="text-[10.5px] font-semibold text-[#17510B] bg-[#C0F2B5] px-2.5 py-0.5 rounded-full shrink-0">
+                <span className="text-[11px] font-medium text-[#17510B] bg-[#C0F2B5] px-2.5 py-0.5 rounded-[6px] shrink-0">
                   {activeHero.confBadge}
                 </span>
               </div>
