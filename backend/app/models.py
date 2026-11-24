@@ -77,6 +77,51 @@ class TextOverlay:
     color: str
 
 @dataclass
+class VisualSection:
+    heading: str
+    amount_or_metric: Optional[str] = None
+    description: str = ""
+    badge: Optional[str] = None
+    subbadge: Optional[str] = None
+    visual_representation: str = "card"  # "3d_artwork", "card", "gauge", "pill", "warning"
+    accent_color: Optional[str] = None
+
+@dataclass
+class VisualProcessStep:
+    step_number: int
+    title: str
+    description: str
+    time_sla: Optional[str] = None  # e.g., "Within 1 Hour", "24-48 Hours"
+    path_label: str = "general"     # "cashless", "reimbursement", "general"
+    status_badge: Optional[str] = None
+
+@dataclass
+class VisualPlan:
+    title: str
+    subtitle: str
+    language: str
+    visual_type: str  # "coverage", "claims", "exclusions", "comparison"
+    art_direction: str
+    composition_style: str  # "asymmetric_bento", "split_comparison", "sequential_process", "metric_grid"
+    color_palette: Dict[str, str]
+    hero_artwork_prompt: str
+    hero_metric: Optional[Dict[str, str]] = None
+    sections: List[VisualSection] = field(default_factory=list)
+    process_steps: Optional[List[VisualProcessStep]] = None
+    decision_question: Optional[str] = None
+    compliance_footer: Dict[str, str] = field(default_factory=dict)
+    source_citations: List[SourceCitation] = field(default_factory=list)
+
+@dataclass
+class VLMQualityResult:
+    passed: bool
+    quality_score: float
+    scores: Dict[str, float]
+    critique: str
+    correction_instructions: List[str] = field(default_factory=list)
+    model_used: str = "vlm"
+
+@dataclass
 class ImagePrompt:
     prompt_text: str
     negative_prompt: str
@@ -86,6 +131,7 @@ class ImagePrompt:
     source_citations: List[SourceCitation]
     compiled_prompts: Optional[Dict[str, str]] = None
     structured_data: Optional[Dict[str, Any]] = None
+    visual_plan: Optional[VisualPlan] = None
 
 @dataclass
 class GeneratedImage:

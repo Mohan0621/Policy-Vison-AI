@@ -16,12 +16,14 @@ from app.services.image_generator import ImageGenerator
 from app.services.llm_engine import LLMEngine
 from app.services.rag_pipeline import rag_pipeline
 from app.services.session_manager import session_manager
+from app.services.visual_planning_engine import VisualPlanningEngine
 from app.services.visual_prompt_builder import VisualPromptBuilder
 
 router = APIRouter(prefix="/generate", tags=["generate"])
 
 llm_engine = LLMEngine()
 prompt_builder = VisualPromptBuilder()
+visual_planner = VisualPlanningEngine()
 image_generator = ImageGenerator()
 executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
 
@@ -142,8 +144,18 @@ async def generate_coverage_visual(request: Request, body: VisualRequest):
             tasks[task_id]["status"] = "running"
             passages = rag_pipeline.retrieve("coverage limits inpatient benefits", session_id=session_id, top_k=5, min_score=0.1)
             fields = llm_engine.extract_fields(passages)
-            visual_spec = llm_engine.extract_visual_spec(passages, language=body.language, visual_type="coverage")
-            prompt = prompt_builder.build_coverage_prompt(fields, style=body.style, language=body.language, visual_spec=visual_spec)
+            filename = (session.get("policy_document") or {}).get("filename")
+            
+            # Dynamic Visual Planning
+            visual_plan = visual_planner.plan_visual(
+                passages=passages,
+                fields=fields,
+                language=body.language,
+                visual_type="coverage",
+                document_filename=filename,
+            )
+            prompt = prompt_builder.build_coverage_prompt(fields, style=body.style, language=body.language)
+            prompt.visual_plan = visual_plan
             
             gen_img = image_generator.generate(prompt, session_id=session_id, visual_type="coverage")
             
@@ -200,8 +212,18 @@ async def generate_claims_visual(request: Request, body: VisualRequest):
             tasks[task_id]["status"] = "running"
             passages = rag_pipeline.retrieve("claim procedure cashless reimbursement", session_id=session_id, top_k=5, min_score=0.1)
             steps = llm_engine.extract_claim_steps(passages)
-            visual_spec = llm_engine.extract_visual_spec(passages, language=body.language, visual_type="claims")
-            prompt = prompt_builder.build_claims_prompt(steps, style=body.style, has_dual_path=True, language=body.language, visual_spec=visual_spec)
+            filename = (session.get("policy_document") or {}).get("filename")
+
+            # Dynamic Visual Planning
+            visual_plan = visual_planner.plan_visual(
+                passages=passages,
+                steps=steps,
+                language=body.language,
+                visual_type="claims",
+                document_filename=filename,
+            )
+            prompt = prompt_builder.build_claims_prompt(steps, style=body.style, has_dual_path=True, language=body.language)
+            prompt.visual_plan = visual_plan
             
             gen_img = image_generator.generate(prompt, session_id=session_id, visual_type="claims")
             

@@ -115,13 +115,13 @@ class VisualPromptBuilder:
             f"{limits_text} {type_text} {prem_text}"
         )
         
-        amt1 = numbers[0] if len(numbers) > 0 else "Rs. 5,00,000"
-        amt2 = numbers[1] if len(numbers) > 1 else "Rs. 50,000"
-        amt3 = numbers[2] if len(numbers) > 2 else "100% Covered"
+        amt1 = numbers[0] if len(numbers) > 0 else (limits_text[:24] if limits_text else "Comprehensive Cover")
+        amt2 = numbers[1] if len(numbers) > 1 else (type_text[:24] if type_text else "Inpatient Treatment")
+        amt3 = numbers[2] if len(numbers) > 2 else "100% Policy Cover"
 
         categories.append(f"Primary Coverage: {amt1}")
-        categories.append(f"Pre & Post Care: {amt2}")
-        categories.append(f"Day Care Procedures: {amt3}")
+        categories.append(f"Care Entitlement: {amt2}")
+        categories.append(f"Policy Protection: {amt3}")
 
         categories_str = ", ".join(categories)
         lang_directive = f" rendered with text in {language} script" if language != "en" else " in English"

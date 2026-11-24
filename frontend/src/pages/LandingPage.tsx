@@ -55,7 +55,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     if (isCardsHovered) return;
     const timer = setInterval(() => {
       setHeroIdx((prev) => (prev + 1) % heroStates.length);
-    }, 4500);
+    }, 6500);
     return () => clearInterval(timer);
   }, [isCardsHovered, heroStates.length]);
 
@@ -121,81 +121,83 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   return (
     <div className="min-h-screen bg-white text-[#000000] font-sans selection:bg-[#CF69E0]/25">
       {/* ═════════════════════════════════════════════════════════════
-          PAGE 1: HOME HERO (Serko Photo 1 - Clean Viewport)
+          PAGE 1: HOME HERO (Serko Horizon Command Press - Unified)
          ═════════════════════════════════════════════════════════════ */}
-      <section className="relative w-full min-h-[85vh] sm:min-h-[92vh] serko-hero-bg flex flex-col items-center justify-between pt-36 sm:pt-44 pb-6 px-4 sm:px-6 overflow-hidden">
+      <section className="relative w-full min-h-[960px] lg:min-h-[1040px] serko-hero-bg flex flex-col items-center pt-28 sm:pt-36 pb-20 px-4 sm:px-6 overflow-hidden">
         {/* Soft atmospheric aura */}
-        <div className="absolute inset-0 bg-radial-at-c from-sky-100/30 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-radial-at-c from-sky-100/35 via-transparent to-transparent pointer-events-none" />
+
+        {/* HTML5 Canvas Fibonacci Stippled Globe Backdrop Centered */}
+        <SerkoHeroGlobe className="top-12 sm:top-8 h-full opacity-90" />
 
         {/* Hero Content Above the Globe Horizon */}
-        <div className="relative z-10 flex flex-col items-center text-center max-w-4xl mx-auto space-y-4 sm:space-y-5 my-auto">
+        <div className="relative z-10 flex flex-col items-center text-center max-w-4xl mx-auto space-y-3.5 sm:space-y-4">
           {/* Eyebrow Label */}
           <div className="text-xs sm:text-[13px] font-medium text-[#71717A] tracking-wider">
             AI policy explainer agent
           </div>
 
           {/* Display Headline */}
-          <h1 className="text-5xl sm:text-6xl lg:text-[68px] font-bold tracking-tight text-[#000000] leading-[1.08] max-w-3xl">
+          <h1 className="text-4xl sm:text-5xl lg:text-[62px] font-bold tracking-tight text-[#000000] leading-[1.1] max-w-3xl">
             The visual policy <span className="horizon-gradient-text">agent</span>
             <br />
             you'll ever need.
           </h1>
 
           {/* Subtitle strictly aligned to Serko editorial rhythm */}
-          <p className="text-base sm:text-lg text-black/75 max-w-[580px] leading-relaxed font-normal">
+          <p className="text-sm sm:text-base text-black/75 max-w-[560px] leading-relaxed font-normal">
             PolicyVision learns how your policy clauses work, extracts rules in seconds, and orchestrates print-ready visual explainers from text to onboarding.
           </p>
 
-          {/* Action Button */}
-          <div className="flex items-center justify-center pt-2">
+          {/* Action Row */}
+          <div className="flex items-center justify-center gap-3 pt-2">
             <button
               onClick={onRegister || onEnterStudio}
-              className="serko-btn-black !text-sm !py-3 !px-7 flex items-center gap-2 shadow-md hover:shadow-lg transition-all"
+              className="serko-btn-black !text-sm !py-2.5 !px-6 flex items-center gap-2 shadow-md hover:shadow-lg transition-all"
             >
               <span>Get started</span>
               <ArrowRight className="w-4 h-4" />
             </button>
+            <button
+              onClick={() => {
+                const el = document.getElementById('faqs-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="bg-white/90 hover:bg-white text-black border border-black/[0.12] rounded-full text-sm font-medium py-2.5 px-5 flex items-center gap-1.5 shadow-xs hover:shadow-md transition-all cursor-pointer"
+            >
+              <span>FAQs</span>
+              <ChevronDown className="w-4 h-4 text-black/60" />
+            </button>
           </div>
         </div>
 
-        {/* Peeking Sphere Horizon Arc at the bottom (Smooth visual transition to Photo 2) */}
-        <div className="relative w-full flex flex-col items-center justify-end pointer-events-none overflow-hidden h-24 -mb-1">
-          <div className="w-[840px] h-[360px] rounded-[50%] border-t border-black/[0.12] bg-gradient-to-b from-white/70 to-transparent shadow-[0_-16px_36px_rgba(150,203,250,0.22)]" />
-        </div>
-      </section>
+        {/* Breathing Space over globe dome */}
+        <div className="w-full h-12 sm:h-16" />
 
-      {/* ═════════════════════════════════════════════════════════════
-          PAGE 2: 3D INTERACTIVE GLOBE & TELEMETRY CARDS (Serko Photo 2)
-         ═════════════════════════════════════════════════════════════ */}
-      <section className="relative w-full min-h-[760px] sm:min-h-[820px] serko-globe-section flex flex-col items-center justify-center px-4 overflow-hidden border-t border-[#E5F2FF]">
-        {/* HTML5 Canvas Fibonacci Stippled Globe Backdrop Centered in Section */}
-        <SerkoHeroGlobe className="absolute inset-0 w-full h-full" />
-
-        {/* Layered Serko Photo 2 Floating Cards Showcase */}
+        {/* Layered Serko Photo 2 Floating Cards Showcase directly over Globe */}
         <div
           onMouseEnter={() => setIsCardsHovered(true)}
           onMouseLeave={() => setIsCardsHovered(false)}
-          className="relative z-10 w-full max-w-4xl mx-auto h-[600px] pointer-events-none"
+          className="relative z-10 w-full max-w-4xl mx-auto h-[480px] sm:h-[520px] pointer-events-none mt-2"
         >
-          {/* 1. Left Pin: New Delhi (IRDAI Desk) with vertical connector hairline (Matches San Francisco in Photo 2) */}
-          <div className="absolute top-[80px] left-[10%] sm:left-[18%] z-20 pointer-events-auto">
+          {/* 1. Left Pin: New Delhi (IRDAI Desk) with vertical connector hairline */}
+          <div className="absolute top-[30px] left-[6%] sm:left-[14%] z-20 pointer-events-auto">
             <div className="flex flex-col items-center">
               <div className="flex items-center gap-2 bg-[#09090B] text-white px-3.5 py-1.5 rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.25)] border border-white/20 text-xs font-semibold hover:scale-105 transition-transform cursor-pointer">
                 <span className="w-2 h-2 rounded-full bg-[#1B98F2] animate-ping" />
                 <span>New Delhi (IRDAI Desk)</span>
               </div>
-              {/* Hairline connector line to globe surface node */}
-              <div className="w-[1.5px] h-10 bg-gradient-to-b from-[#09090B] to-black/40" />
+              <div className="w-[1.5px] h-8 bg-gradient-to-b from-[#09090B] to-black/40" />
               <div className="w-2 h-2 rounded-full bg-black ring-4 ring-black/20" />
             </div>
           </div>
 
-          {/* 2. Right Offset Card: Confirmed Policy Explainer (Matches Marriott Marquis in Photo 2) */}
-          <div className="absolute top-[35px] right-[6%] sm:right-[14%] z-20 pointer-events-auto">
+          {/* 2. Right Offset Card: Confirmed Policy Explainer */}
+          <div className="absolute top-[10px] right-[4%] sm:right-[12%] z-20 pointer-events-auto">
             <div className="flex flex-col items-center">
               <div
                 onClick={() => setHeroIdx((prev) => (prev + 1) % heroStates.length)}
-                className="w-[280px] sm:w-[330px] bg-white rounded-2xl border border-black/[0.08] p-3.5 shadow-[0_16px_40px_rgba(0,0,0,0.10)] hover:scale-105 hover:shadow-[0_24px_50px_rgba(27,152,242,0.18)] transition-all duration-300 cursor-pointer group"
+                className="w-[280px] sm:w-[320px] bg-white rounded-2xl border border-black/[0.08] p-3 shadow-[0_16px_40px_rgba(0,0,0,0.10)] hover:scale-105 hover:shadow-[0_24px_50px_rgba(27,152,242,0.18)] transition-all duration-300 cursor-pointer group"
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] font-bold text-[#158142] bg-[#EAF8ED] border border-[#C0F2B5] px-2 py-0.5 rounded-full uppercase tracking-wider">
@@ -207,7 +209,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="w-14 h-14 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] overflow-hidden shrink-0">
+                  <div className="w-13 h-13 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] overflow-hidden shrink-0">
                     <img
                       src={heroIdx === 1 ? '/claims_flowchart_explainer.png' : '/coverage_infographic_explainer.png'}
                       alt="Policy Explainer"
@@ -227,17 +229,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   </div>
                 </div>
               </div>
-              {/* Hairline connector line to globe surface node */}
-              <div className="w-[1.5px] h-10 bg-gradient-to-b from-black/40 to-black/80" />
+              <div className="w-[1.5px] h-8 bg-gradient-to-b from-black/40 to-black/80" />
               <div className="w-2.5 h-2.5 rounded-full bg-black ring-4 ring-black/20" />
             </div>
           </div>
 
-          {/* 3. Center Floating Pill 1: Insurer Membership Card (Matches Marriott Bonvoy in Photo 2) */}
-          <div className="absolute top-[340px] left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
+          {/* 3. Center Floating Pill 1: Insurer Membership Card */}
+          <div className="absolute top-[260px] left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
             <div
               onClick={() => setHeroIdx(1)}
-              className="w-[320px] sm:w-[420px] bg-white rounded-full border border-black/[0.08] px-5 py-3 shadow-[0_12px_32px_rgba(0,0,0,0.08)] flex items-center justify-between hover:scale-105 hover:shadow-[0_18px_40px_rgba(0,0,0,0.12)] transition-all duration-300 cursor-pointer group"
+              className="w-[320px] sm:w-[410px] bg-white rounded-full border border-black/[0.08] px-4.5 py-2.5 shadow-[0_12px_32px_rgba(0,0,0,0.08)] flex items-center justify-between hover:scale-105 hover:shadow-[0_18px_40px_rgba(0,0,0,0.12)] transition-all duration-300 cursor-pointer group"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#FF8C51] via-[#F56293] to-[#CF69E0] flex items-center justify-center shrink-0">
@@ -253,11 +254,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
           </div>
 
-          {/* 4. Center Floating Pill 2: User Profile Card (Matches Paula's profile in Photo 2) */}
-          <div className="absolute top-[415px] left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
+          {/* 4. Center Floating Pill 2: User Profile Card */}
+          <div className="absolute top-[320px] left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
             <div
               onClick={() => setHeroIdx(0)}
-              className="w-[290px] sm:w-[380px] bg-white rounded-full border border-black/[0.08] px-4 py-2.5 shadow-[0_12px_32px_rgba(0,0,0,0.08)] flex items-center justify-between hover:scale-105 hover:shadow-[0_18px_40px_rgba(0,0,0,0.12)] transition-all duration-300 cursor-pointer group"
+              className="w-[290px] sm:w-[370px] bg-white rounded-full border border-black/[0.08] px-4 py-2.5 shadow-[0_12px_32px_rgba(0,0,0,0.08)] flex items-center justify-between hover:scale-105 hover:shadow-[0_18px_40px_rgba(0,0,0,0.12)] transition-all duration-300 cursor-pointer group"
             >
               <div className="flex items-center gap-3">
                 <div className="w-7 h-7 rounded-full bg-[#000000] text-white flex items-center justify-center text-xs font-bold">
