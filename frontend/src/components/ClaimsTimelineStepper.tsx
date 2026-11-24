@@ -66,6 +66,16 @@ interface ClaimsTimelineStepperProps {
 
 export const ClaimsTimelineStepper: React.FC<ClaimsTimelineStepperProps> = ({ onStepSelect }) => {
   const [activeStepIndex, setActiveStepIndex] = useState<number>(0);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
+
+  // Auto-advance stepper every 3.8s to keep claims flowchart active & moving
+  React.useEffect(() => {
+    if (isPaused) return;
+    const interval = setInterval(() => {
+      setActiveStepIndex((prev) => (prev + 1) % claimsSteps.length);
+    }, 3800);
+    return () => clearInterval(interval);
+  }, [isPaused]);
 
   const activeStep = claimsSteps[activeStepIndex];
 
@@ -77,7 +87,11 @@ export const ClaimsTimelineStepper: React.FC<ClaimsTimelineStepperProps> = ({ on
   };
 
   return (
-    <div className="w-full bg-white rounded-3xl border border-black/[0.08] shadow-[0_12px_40px_rgba(0,0,0,0.06)] p-6 sm:p-8 space-y-6">
+    <div
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      className="w-full bg-white rounded-3xl border border-black/[0.08] shadow-[0_12px_40px_rgba(0,0,0,0.06)] p-6 sm:p-8 space-y-6"
+    >
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#EBEBEB]">
         <div>
@@ -87,6 +101,10 @@ export const ClaimsTimelineStepper: React.FC<ClaimsTimelineStepperProps> = ({ on
             </span>
             <span className="text-xs text-[#71717A]">•</span>
             <span className="text-xs text-[#71717A] font-medium">Standard IRDAI 4-Stage Pathway</span>
+            <span className="text-xs text-[#71717A]">•</span>
+            <span className="text-[11px] font-semibold text-[#1B98F2] bg-[#EFF6FF] px-2 py-0.5 rounded-full">
+              {isPaused ? 'Paused' : 'Auto-Advancing ⚡'}
+            </span>
           </div>
           <h3 className="text-lg sm:text-xl font-bold text-[#000000] tracking-tight">
             Interactive Claims Process Pathway
@@ -108,12 +126,18 @@ export const ClaimsTimelineStepper: React.FC<ClaimsTimelineStepperProps> = ({ on
             <button
               key={step.id}
               onClick={() => handleSelect(idx)}
-              className={`p-4 rounded-2xl border text-left transition-all relative flex flex-col justify-between ${
+              className={`p-4 rounded-2xl border text-left transition-all relative flex flex-col justify-between overflow-hidden ${
                 isActive
                   ? 'border-[#1B98F2] bg-[#1B98F2]/5 shadow-[0_4px_16px_rgba(27,152,242,0.12)] scale-[1.02]'
                   : 'border-[#EBEBEB] bg-white hover:border-[#D4D4D8] hover:bg-[#FBFBFB]'
               }`}
             >
+              {/* Progress bar line for active step */}
+              {isActive && (
+                <div className="absolute top-0 left-0 right-0 h-1 bg-[#1B98F2]/20">
+                  <div className="h-full bg-[#1B98F2] animate-progress-fill" />
+                </div>
+              )}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div

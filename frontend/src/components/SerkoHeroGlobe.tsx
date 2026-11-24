@@ -91,8 +91,8 @@ export const SerkoHeroGlobe: React.FC<SerkoHeroGlobeProps> = ({ className = '' }
 
     function getSphereGeometry() {
       const cx = width * 0.5;
-      const cy = height * 0.74;
-      const radius = Math.max(240, Math.min(width * 0.36, height * 0.33));
+      const cy = height * 0.50;
+      const radius = Math.max(240, Math.min(width * 0.36, height * 0.44, 340));
       return { cx, cy, radius };
     }
 
@@ -102,30 +102,30 @@ export const SerkoHeroGlobe: React.FC<SerkoHeroGlobeProps> = ({ className = '' }
       auraCanvas.height = Math.max(1, height);
       auraCtx.clearRect(0, 0, width, height);
 
-      // Outer soft atmospheric sky halo
-      const outer = auraCtx.createRadialGradient(cx, cy - radius * 0.15, radius * 0.4, cx, cy, radius * 1.18);
-      outer.addColorStop(0, 'rgba(255, 255, 255, 0.36)');
-      outer.addColorStop(0.55, 'rgba(150, 203, 250, 0.18)');
-      outer.addColorStop(0.85, 'rgba(207, 105, 224, 0.08)');
+      // Outer soft atmospheric sky halo (soft blue to lavender)
+      const outer = auraCtx.createRadialGradient(cx, cy - radius * 0.12, radius * 0.38, cx, cy, radius * 1.22);
+      outer.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
+      outer.addColorStop(0.48, 'rgba(180, 220, 255, 0.22)');
+      outer.addColorStop(0.78, 'rgba(235, 215, 255, 0.12)');
       outer.addColorStop(1, 'rgba(255, 255, 255, 0)');
       auraCtx.fillStyle = outer;
       auraCtx.beginPath();
-      auraCtx.arc(cx, cy, radius * 1.18, 0, Math.PI * 2);
+      auraCtx.arc(cx, cy, radius * 1.22, 0, Math.PI * 2);
       auraCtx.fill();
 
       // Soft translucent glass sphere interior highlight matching live serko.ai dome
       const inner = auraCtx.createRadialGradient(
         cx,
-        cy - radius * 0.32,
+        cy - radius * 0.28,
         radius * 0.06,
         cx,
         cy,
         radius
       );
-      inner.addColorStop(0, 'rgba(255, 255, 255, 0.42)');
-      inner.addColorStop(0.58, 'rgba(150, 203, 250, 0.22)');
-      inner.addColorStop(0.88, 'rgba(27, 152, 242, 0.10)');
-      inner.addColorStop(1, 'rgba(255, 255, 255, 0.02)');
+      inner.addColorStop(0, 'rgba(255, 255, 255, 0.52)');
+      inner.addColorStop(0.55, 'rgba(205, 235, 255, 0.20)');
+      inner.addColorStop(0.85, 'rgba(225, 210, 250, 0.08)');
+      inner.addColorStop(1, 'rgba(255, 255, 255, 0.01)');
       auraCtx.fillStyle = inner;
       auraCtx.beginPath();
       auraCtx.arc(cx, cy, radius, 0, Math.PI * 2);
@@ -172,34 +172,36 @@ export const SerkoHeroGlobe: React.FC<SerkoHeroGlobeProps> = ({ className = '' }
       if (!ctx) return;
       const dt = Math.min(0.06, (now - lastPaint) / 1000);
       lastPaint = now;
-      t += dt * 0.68;
+      t += dt * 0.28;
 
       const p = pointerRef.current;
-      p.currentX += (p.targetX - p.currentX) * 0.1;
-      p.currentY += (p.targetY - p.currentY) * 0.1;
+      p.currentX += (p.targetX - p.currentX) * 0.08;
+      p.currentY += (p.targetY - p.currentY) * 0.08;
 
       ctx.clearRect(0, 0, width, height);
 
       const geom = getSphereGeometry();
-      const cx = geom.cx + p.currentX * 36;
-      const cy = geom.cy + p.currentY * 24;
+      const cx = geom.cx + p.currentX * 24;
+      const cy = geom.cy + p.currentY * 16;
       const radius = geom.radius;
-      const rotY = t * 0.65 + p.currentX * 0.95;
-      const rotX = -0.22 + p.currentY * 0.55;
+      const rotY = t * 0.45 + p.currentX * 0.5;
+      const rotX = -0.15 + p.currentY * 0.3;
 
       // 1. Atmosphere
       if (auraCanvas.width > 0 && auraCanvas.height > 0) {
-        ctx.drawImage(auraCanvas, p.currentX * 12, p.currentY * 8, width, height);
+        ctx.drawImage(auraCanvas, p.currentX * 8, p.currentY * 6, width, height);
       }
 
       // 2. Rim ring
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.18)';
+      ctx.setLineDash([]);
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.16)';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.arc(cx, cy, radius, 0, Math.PI * 2);
       ctx.stroke();
 
-      // 3. Latitude wireframe arcs
+      // 3. Latitude wireframe arcs (dotted for serko precision)
+      ctx.setLineDash([2, 5]);
       ctx.lineWidth = 0.75;
       for (let lat = -60; lat <= 75; lat += 20) {
         ctx.beginPath();
@@ -219,11 +221,11 @@ export const SerkoHeroGlobe: React.FC<SerkoHeroGlobeProps> = ({ className = '' }
             started = false;
           }
         }
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.07)';
         ctx.stroke();
       }
 
-      // Longitude arcs
+      // Longitude arcs (dotted)
       for (let lon = 0; lon < 180; lon += 24) {
         ctx.beginPath();
         let started = false;
@@ -248,11 +250,12 @@ export const SerkoHeroGlobe: React.FC<SerkoHeroGlobeProps> = ({ className = '' }
             started = false;
           }
         }
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)';
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.05)';
         ctx.stroke();
       }
 
       // 4. Fibonacci surface dots
+      ctx.setLineDash([]);
       for (let i = 0; i < dots.length; i++) {
         const pt = rotateVec(dots[i], rotY, rotX);
         if (pt.z > 0.02) {

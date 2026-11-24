@@ -50,24 +50,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
   const [heroIdx, setHeroIdx] = useState(0);
   const [isCardsHovered, setIsCardsHovered] = useState(false);
-  const [isTestingEngine, setIsTestingEngine] = useState(false);
 
   useEffect(() => {
-    if (isCardsHovered || isTestingEngine) return;
+    if (isCardsHovered) return;
     const timer = setInterval(() => {
       setHeroIdx((prev) => (prev + 1) % heroStates.length);
-    }, 6000);
+    }, 4500);
     return () => clearInterval(timer);
-  }, [isCardsHovered, isTestingEngine, heroStates.length]);
-
-  const handleTestEngineClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsTestingEngine(true);
-    setTimeout(() => {
-      setHeroIdx((prev) => (prev + 1) % heroStates.length);
-      setIsTestingEngine(false);
-    }, 900);
-  };
+  }, [isCardsHovered, heroStates.length]);
 
   const activeHero = heroStates[heroIdx];
 
@@ -131,21 +121,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   return (
     <div className="min-h-screen bg-white text-[#000000] font-sans selection:bg-[#CF69E0]/25">
       {/* ═════════════════════════════════════════════════════════════
-          PAGE 1: HOME HERO (Serko Horizon Command Press)
+          PAGE 1: HOME HERO (Serko Photo 1 - Clean Viewport)
          ═════════════════════════════════════════════════════════════ */}
-      <section className="relative w-full min-h-[960px] lg:min-h-[1060px] serko-hero-bg flex flex-col items-center pt-32 pb-20 px-4 sm:px-6 overflow-hidden">
-        {/* HTML5 Canvas Fibonacci Stippled Globe Backdrop */}
-        <SerkoHeroGlobe className="top-0 h-full opacity-90" />
+      <section className="relative w-full min-h-[85vh] sm:min-h-[92vh] serko-hero-bg flex flex-col items-center justify-between pt-36 sm:pt-44 pb-6 px-4 sm:px-6 overflow-hidden">
+        {/* Soft atmospheric aura */}
+        <div className="absolute inset-0 bg-radial-at-c from-sky-100/30 via-transparent to-transparent pointer-events-none" />
 
         {/* Hero Content Above the Globe Horizon */}
-        <div className="relative z-10 flex flex-col items-center text-center max-w-4xl mx-auto space-y-4">
+        <div className="relative z-10 flex flex-col items-center text-center max-w-4xl mx-auto space-y-4 sm:space-y-5 my-auto">
           {/* Eyebrow Label */}
           <div className="text-xs sm:text-[13px] font-medium text-[#71717A] tracking-wider">
             AI policy explainer agent
           </div>
 
           {/* Display Headline */}
-          <h1 className="text-5xl sm:text-6xl lg:text-[66px] font-bold tracking-tight text-[#000000] leading-[1.08] max-w-3xl">
+          <h1 className="text-5xl sm:text-6xl lg:text-[68px] font-bold tracking-tight text-[#000000] leading-[1.08] max-w-3xl">
             The visual policy <span className="horizon-gradient-text">agent</span>
             <br />
             you'll ever need.
@@ -156,7 +146,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             PolicyVision learns how your policy clauses work, extracts rules in seconds, and orchestrates print-ready visual explainers from text to onboarding.
           </p>
 
-          {/* Action Row */}
+          {/* Action Button */}
           <div className="flex items-center justify-center pt-2">
             <button
               onClick={onRegister || onEnterStudio}
@@ -168,142 +158,118 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </div>
 
-        {/* Breathing Space over globe dome */}
-        <div className="w-full h-16 sm:h-24" />
+        {/* Peeking Sphere Horizon Arc at the bottom (Smooth visual transition to Photo 2) */}
+        <div className="relative w-full flex flex-col items-center justify-end pointer-events-none overflow-hidden h-24 -mb-1">
+          <div className="w-[840px] h-[360px] rounded-[50%] border-t border-black/[0.12] bg-gradient-to-b from-white/70 to-transparent shadow-[0_-16px_36px_rgba(150,203,250,0.22)]" />
+        </div>
+      </section>
 
-        {/* ── Layered Hero Profile Showcase Widget (Balanced 3-card showcase over globe) ── */}
+      {/* ═════════════════════════════════════════════════════════════
+          PAGE 2: 3D INTERACTIVE GLOBE & TELEMETRY CARDS (Serko Photo 2)
+         ═════════════════════════════════════════════════════════════ */}
+      <section className="relative w-full min-h-[760px] sm:min-h-[820px] serko-globe-section flex flex-col items-center justify-center px-4 overflow-hidden border-t border-[#E5F2FF]">
+        {/* HTML5 Canvas Fibonacci Stippled Globe Backdrop Centered in Section */}
+        <SerkoHeroGlobe className="absolute inset-0 w-full h-full" />
+
+        {/* Layered Serko Photo 2 Floating Cards Showcase */}
         <div
           onMouseEnter={() => setIsCardsHovered(true)}
           onMouseLeave={() => setIsCardsHovered(false)}
-          className="relative z-10 w-full max-w-4xl mx-auto px-2 mt-4"
+          className="relative z-10 w-full max-w-4xl mx-auto h-[600px] pointer-events-none"
         >
-          <div className="flex flex-col md:flex-row items-center justify-center gap-4 lg:gap-6">
-            {/* 1. Left Flanking Floating Chip: Flowchart Mode */}
+          {/* 1. Left Pin: New Delhi (IRDAI Desk) with vertical connector hairline (Matches San Francisco in Photo 2) */}
+          <div className="absolute top-[80px] left-[10%] sm:left-[18%] z-20 pointer-events-auto">
+            <div className="flex flex-col items-center">
+              <div className="flex items-center gap-2 bg-[#09090B] text-white px-3.5 py-1.5 rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.25)] border border-white/20 text-xs font-semibold hover:scale-105 transition-transform cursor-pointer">
+                <span className="w-2 h-2 rounded-full bg-[#1B98F2] animate-ping" />
+                <span>New Delhi (IRDAI Desk)</span>
+              </div>
+              {/* Hairline connector line to globe surface node */}
+              <div className="w-[1.5px] h-10 bg-gradient-to-b from-[#09090B] to-black/40" />
+              <div className="w-2 h-2 rounded-full bg-black ring-4 ring-black/20" />
+            </div>
+          </div>
+
+          {/* 2. Right Offset Card: Confirmed Policy Explainer (Matches Marriott Marquis in Photo 2) */}
+          <div className="absolute top-[35px] right-[6%] sm:right-[14%] z-20 pointer-events-auto">
+            <div className="flex flex-col items-center">
+              <div
+                onClick={() => setHeroIdx((prev) => (prev + 1) % heroStates.length)}
+                className="w-[280px] sm:w-[330px] bg-white rounded-2xl border border-black/[0.08] p-3.5 shadow-[0_16px_40px_rgba(0,0,0,0.10)] hover:scale-105 hover:shadow-[0_24px_50px_rgba(27,152,242,0.18)] transition-all duration-300 cursor-pointer group"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-bold text-[#158142] bg-[#EAF8ED] border border-[#C0F2B5] px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    {activeHero.confBadge || 'Confirmed'}
+                  </span>
+                  <span className="text-[10px] font-mono text-[#71717A]">
+                    150 DPI PRINT READY
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] overflow-hidden shrink-0">
+                    <img
+                      src={heroIdx === 1 ? '/claims_flowchart_explainer.png' : '/coverage_infographic_explainer.png'}
+                      alt="Policy Explainer"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/clean_policy_infographic.png';
+                      }}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1 text-left">
+                    <p className="text-xs font-bold text-[#000000] truncate">
+                      {heroIdx === 1 ? 'Cashless Adjudication Flow' : 'Care Health Optima ₹15L'}
+                    </p>
+                    <p className="text-[11px] text-[#71717A] truncate mt-0.5">
+                      {activeHero.routeMeta}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              {/* Hairline connector line to globe surface node */}
+              <div className="w-[1.5px] h-10 bg-gradient-to-b from-black/40 to-black/80" />
+              <div className="w-2.5 h-2.5 rounded-full bg-black ring-4 ring-black/20" />
+            </div>
+          </div>
+
+          {/* 3. Center Floating Pill 1: Insurer Membership Card (Matches Marriott Bonvoy in Photo 2) */}
+          <div className="absolute top-[340px] left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
             <div
               onClick={() => setHeroIdx(1)}
-              className={`w-full sm:w-[220px] bg-white rounded-2xl border p-3.5 shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-300 cursor-pointer animate-float-slow hover:![animation-play-state:paused] hover:-translate-y-2.5 hover:scale-[1.03] hover:shadow-[0_22px_45px_rgba(27,152,242,0.18)] ${
-                heroIdx === 1 ? 'border-[#1B98F2] ring-2 ring-[#1B98F2]/30 shadow-[0_14px_32px_rgba(27,152,242,0.2)]' : 'border-black/[0.08] hover:border-[#1B98F2]/60'
-              }`}
+              className="w-[320px] sm:w-[420px] bg-white rounded-full border border-black/[0.08] px-5 py-3 shadow-[0_12px_32px_rgba(0,0,0,0.08)] flex items-center justify-between hover:scale-105 hover:shadow-[0_18px_40px_rgba(0,0,0,0.12)] transition-all duration-300 cursor-pointer group"
             >
-              <div className="flex items-center justify-between text-[#000000]">
-                <div className="flex items-center gap-2 min-w-0 pr-1">
-                  <Clock className="w-3.5 h-3.5 text-[#1B98F2]" />
-                  <p className="text-xs font-bold text-[#000000] truncate">
-                    CLAIMS FLOWCHART
-                  </p>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#FF8C51] via-[#F56293] to-[#CF69E0] flex items-center justify-center shrink-0">
+                  <Shield className="w-3.5 h-3.5 text-white" />
                 </div>
-                <span className="text-[10px] font-semibold text-[#1B98F2] bg-[#EFF6FF] px-2 py-0.5 rounded-md shrink-0">
-                  PATH
+                <span className="text-xs font-semibold text-[#000000] tracking-tight truncate">
+                  Max Bupa Health Companion · Policy #88219
                 </span>
               </div>
-              <p className="text-[11px] text-[#71717A] truncate mt-1">
-                Emergency (24h) vs Planned (48h)
-              </p>
-              <div className="mt-2 pt-2 border-t border-black/[0.05] flex items-center justify-between text-[10.5px] text-[#52525B]">
-                <span>Decision Diamond</span>
-                <span className="font-semibold text-[#1B98F2]">Active</span>
-              </div>
+              <span className="text-[10.5px] font-semibold text-[#1B98F2] bg-[#EFF6FF] px-2.5 py-0.5 rounded-full border border-[#DBEAFE] shrink-0">
+                Cashless Active
+              </span>
             </div>
+          </div>
 
-            {/* 2. Center Serko Layered Profile Widget (#F6F6F6 container) */}
-            <div className="w-full sm:w-[430px] bg-[#F6F6F6] rounded-[22px] border border-black/[0.08] p-3.5 shadow-[0_14px_38px_rgba(0,0,0,0.10)] hover:shadow-[0_24px_55px_rgba(0,0,0,0.14)] hover:-translate-y-1 hover:border-[#1B98F2]/40 transition-all duration-300">
-              {/* Top White Prompt Choice Bar */}
-              <div
-                onClick={() => setHeroIdx((prev) => (prev + 1) % heroStates.length)}
-                className="bg-white rounded-xl px-3 py-2 border border-black/[0.04] flex items-center justify-between cursor-pointer group/bar hover:border-black/[0.12] transition-colors"
-              >
-                <span className="text-[10.5px] font-bold text-[#158142] bg-[#C0F2B5] px-2 py-0.5 rounded-full uppercase tracking-wider">
-                  150 DPI PRINT READY
-                </span>
-                <span className="text-[11px] font-medium text-[#71717A] group-hover/bar:text-[#000000] transition-colors">
-                  1024×1024
-                </span>
-              </div>
-              <div className="px-1 py-1.5">
-                <p className="text-xs font-bold text-[#000000]">
-                  {activeHero.confTitle}
-                </p>
-                <p className="text-[11px] text-[#71717A] truncate">
-                  Hospital facade · Shield umbrella · Limits meter
-                </p>
-              </div>
-
-              {/* Middle Interactive Visual Preview Snippet */}
-              <div
-                className="mt-2.5 bg-white rounded-xl p-2.5 border border-black/[0.04] flex items-center gap-3 group/img cursor-pointer"
-                onClick={() => setHeroIdx((prev) => (prev + 1) % heroStates.length)}
-              >
-                <div className="w-14 h-14 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] overflow-hidden shrink-0 flex items-center justify-center relative">
-                  <img
-                    src={heroIdx === 1 ? '/claims_flowchart_explainer.png' : '/coverage_infographic_explainer.png'}
-                    alt="Visual Explainer Preview"
-                    className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/clean_policy_infographic.png';
-                    }}
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-[#000000] truncate">
-                    {heroIdx === 1 ? 'Cashless Adjudication Flowchart' : 'Care Health Optima Coverage'}
-                  </p>
-                  <p className="text-[11px] text-[#71717A] truncate">
-                    {heroIdx === 1 ? 'Emergency admission vs Planned' : 'Single Room A/C · ₹5,000 Cap'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Bottom Policy Status and Live Generator Button */}
-              <div className="mt-2.5 pt-2 border-t border-black/[0.06] flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-lg bg-black/[0.05] flex items-center justify-center text-[#000000]">
-                    <Shield className="w-3.5 h-3.5" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-[#000000]">
-                      PolicyVision Generator
-                    </p>
-                    <p className="text-[10.5px] text-[#71717A]">
-                      {isTestingEngine ? 'Synthesizing 1024² 150 DPI...' : 'Diffusion Active · 1024² 150 DPI · 10x Speed'}
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleTestEngineClick}
-                  className="flex items-center gap-1.5 text-[11px] font-semibold text-[#17510B] bg-[#C0F2B5] hover:bg-[#A6EFA0] px-3 py-1 rounded-full cursor-pointer transition-all active:scale-95 shadow-2xs hover:shadow-xs"
-                  title="Click to test live diffusion engine cycle"
-                >
-                  <span className={`w-1.5 h-1.5 rounded-full bg-[#17510B] ${isTestingEngine ? 'animate-ping' : ''}`} />
-                  <span>{isTestingEngine ? 'Rendering...' : 'Live Test ⚡'}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* 3. Right Flanking Floating Chip: Coverage Mode */}
+          {/* 4. Center Floating Pill 2: User Profile Card (Matches Paula's profile in Photo 2) */}
+          <div className="absolute top-[415px] left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
             <div
               onClick={() => setHeroIdx(0)}
-              className={`w-full sm:w-[240px] bg-white rounded-2xl border p-3.5 shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-300 cursor-pointer animate-float-slow-reverse hover:![animation-play-state:paused] hover:-translate-y-2.5 hover:scale-[1.03] hover:shadow-[0_22px_45px_rgba(22,163,74,0.18)] ${
-                heroIdx === 0 ? 'border-[#16A34A] ring-2 ring-[#16A34A]/30 shadow-[0_14px_32px_rgba(22,163,74,0.2)]' : 'border-black/[0.08] hover:border-[#16A34A]/60'
-              }`}
+              className="w-[290px] sm:w-[380px] bg-white rounded-full border border-black/[0.08] px-4 py-2.5 shadow-[0_12px_32px_rgba(0,0,0,0.08)] flex items-center justify-between hover:scale-105 hover:shadow-[0_18px_40px_rgba(0,0,0,0.12)] transition-all duration-300 cursor-pointer group"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 min-w-0 pr-1">
-                  <Layers className="w-3.5 h-3.5 text-[#16A34A]" />
-                  <p className="text-xs font-bold text-[#000000] truncate">
-                    COVERAGE INFOGRAPHIC
-                  </p>
+              <div className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-[#000000] text-white flex items-center justify-center text-xs font-bold">
+                  C
                 </div>
-                <span className="text-[10.5px] font-semibold text-[#17510B] bg-[#C0F2B5] px-2 py-0.5 rounded-md shrink-0">
-                  VERIFIED
+                <span className="text-xs font-semibold text-[#000000] tracking-tight">
+                  Chaitanya's Policy Profile
                 </span>
               </div>
-              <p className="text-[11px] text-[#71717A] truncate mt-1">
-                Sum Insured · Room Rent · ICU Cap
-              </p>
-              <div className="mt-2 pt-2 border-t border-black/[0.05] flex items-center justify-between text-[10.5px] text-[#52525B]">
-                <span>Vector Pictorial Art</span>
-                <span className="font-semibold text-[#16A34A]">IRDAI Grounded</span>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#158142]" />
+                <Bell className="w-4 h-4 text-[#71717A]" />
               </div>
             </div>
           </div>
