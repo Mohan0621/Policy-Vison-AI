@@ -1328,6 +1328,14 @@ def _try_cloudflare_flux(prompt: ImagePrompt) -> Optional[Image.Image]:
         headers = {"Authorization": f"Bearer {token}"}
         resp = httpx.post(url, headers=headers, json={"prompt": prompt.prompt_text}, timeout=60.0)
         if resp.status_code == 200:
+            content_type = resp.headers.get("content-type", "")
+            if "application/json" in content_type:
+                import json
+                import base64
+                data = resp.json()
+                b64_str = data.get("result", {}).get("image", "")
+                if b64_str:
+                    return Image.open(io.BytesIO(base64.b64decode(b64_str)))
             return Image.open(io.BytesIO(resp.content))
     except Exception:
         return None
