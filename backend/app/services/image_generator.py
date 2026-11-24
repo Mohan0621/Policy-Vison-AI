@@ -62,10 +62,15 @@ def _try_cloudflare_flux(prompt: ImagePrompt) -> Optional[Image.Image]:
     if not (account_id and api_token):
         return None
 
+    diffusion_text = prompt.prompt_text
+    if prompt.visual_plan and prompt.visual_plan.hero_artwork_prompt:
+        pos, _ = DynamicImagePromptGenerator()._compile_diffusion_prompts(prompt.visual_plan)
+        diffusion_text = pos
+
     url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/{model}"
     headers = {"Authorization": f"Bearer {api_token}"}
     payload = {
-        "prompt": prompt.prompt_text,
+        "prompt": diffusion_text,
     }
 
     try:
@@ -95,6 +100,11 @@ def _try_openrouter_flux(prompt: ImagePrompt) -> Optional[Image.Image]:
     if not api_key:
         return None
 
+    diffusion_text = prompt.prompt_text
+    if prompt.visual_plan and prompt.visual_plan.hero_artwork_prompt:
+        pos, _ = DynamicImagePromptGenerator()._compile_diffusion_prompts(prompt.visual_plan)
+        diffusion_text = pos
+
     headers = {
         "Authorization": f"Bearer {api_key}",
         "HTTP-Referer": "https://policyvision.ai",
@@ -103,7 +113,7 @@ def _try_openrouter_flux(prompt: ImagePrompt) -> Optional[Image.Image]:
     }
     payload = {
         "model": model,
-        "prompt": prompt.prompt_text,
+        "prompt": diffusion_text,
         "aspect_ratio": "1:1",
     }
 

@@ -13,6 +13,7 @@ from app.models import (
     VisualStyle,
 )
 from app.services.image_generator import ImageGenerator
+from app.services.image_prompt_generator import DynamicImagePromptGenerator
 from app.services.llm_engine import LLMEngine
 from app.services.rag_pipeline import rag_pipeline
 from app.services.session_manager import session_manager
@@ -23,6 +24,7 @@ router = APIRouter(prefix="/generate", tags=["generate"])
 
 llm_engine = LLMEngine()
 prompt_builder = VisualPromptBuilder()
+prompt_generator = DynamicImagePromptGenerator()
 visual_planner = VisualPlanningEngine()
 image_generator = ImageGenerator()
 executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
@@ -154,8 +156,8 @@ async def generate_coverage_visual(request: Request, body: VisualRequest):
                 visual_type="coverage",
                 document_filename=filename,
             )
-            prompt = prompt_builder.build_coverage_prompt(fields, style=body.style, language=body.language)
-            prompt.visual_plan = visual_plan
+            # Generate dynamic diffusion prompt from visual plan
+            prompt = prompt_generator.generate_image_prompt(visual_plan)
             
             gen_img = image_generator.generate(prompt, session_id=session_id, visual_type="coverage")
             
@@ -222,8 +224,8 @@ async def generate_claims_visual(request: Request, body: VisualRequest):
                 visual_type="claims",
                 document_filename=filename,
             )
-            prompt = prompt_builder.build_claims_prompt(steps, style=body.style, has_dual_path=True, language=body.language)
-            prompt.visual_plan = visual_plan
+            # Generate dynamic diffusion prompt from visual plan
+            prompt = prompt_generator.generate_image_prompt(visual_plan)
             
             gen_img = image_generator.generate(prompt, session_id=session_id, visual_type="claims")
             

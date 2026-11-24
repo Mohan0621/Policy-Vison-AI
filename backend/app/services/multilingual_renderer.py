@@ -319,9 +319,19 @@ class MultilingualRenderer:
 
         # 1. Header Banner
         draw.rounded_rectangle([40, 28, width - 40, 125], radius=14, fill=(30, 41, 59))
-        draw.text((70, 46), plan.title[:50], font=f_h1, fill=(255, 255, 255))
-        draw.text((70, 84), plan.subtitle[:65], font=f_sub, fill=(148, 163, 184))
-        draw_badge(draw, "IRDAI CIS GROUNDED", width - 230, 46, (22, 101, 52), (255, 255, 255), f_badge)
+        draw.text((70, 46), plan.title[:48], font=f_h1, fill=(255, 255, 255))
+        draw.text((70, 84), plan.subtitle[:60], font=f_sub, fill=(148, 163, 184))
+        if flux_artwork:
+            thumb_w, thumb_h = 96, 78
+            thumb = flux_artwork.resize((thumb_w, thumb_h), Image.Resampling.LANCZOS).convert("RGBA")
+            t_mask = Image.new("L", (thumb_w, thumb_h), 0)
+            ImageDraw.Draw(t_mask).rounded_rectangle([0, 0, thumb_w, thumb_h], radius=8, fill=255)
+            img.paste(thumb, (width - 146, 38), t_mask)
+            draw.rounded_rectangle([width - 146, 38, width - 146 + thumb_w, 38 + thumb_h], radius=8, outline=(148, 163, 184), width=1)
+            draw_badge(draw, "IRDAI CIS GROUNDED", width - 330, 46, (22, 101, 52), (255, 255, 255), f_badge)
+            draw_badge(draw, "3D ISOMETRIC AI", width - 330, 82, (15, 23, 42), (52, 211, 153), f_badge)
+        else:
+            draw_badge(draw, "IRDAI CIS GROUNDED", width - 230, 46, (22, 101, 52), (255, 255, 255), f_badge)
 
         # 2. Stage 01: Hospital Intimation
         s1_box = [60, 145, width - 60, 240]
